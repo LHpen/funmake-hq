@@ -20,6 +20,7 @@
 // On top of the server's state the office gets state.finished (done lines of the last 24 h, newest first),
 // state.routines (every bot's routines, soonest first) and state.check (the latest status check: who has answered), for
 // the «Finished», «Routines» and «Status check» panels.
+import { zhStep } from './lib/zhstep.js';
 import { StateStore, botIdFor } from './lib/state.js';
 import { FEED_BASE, feedFromLink } from './lib/feedbase.js';
 
@@ -186,7 +187,7 @@ export async function connectFeed({ topic, servers }, onState) {
       let rec;
       try { rec = JSON.parse(l.message); } catch { continue; }
       if (rec?.status !== 'done' || typeof rec.bot !== 'string') continue;
-      finished.push({ t: typeof rec.t === 'string' ? rec.t : new Date(l.time * 1000).toISOString(), bot: botIdFor(rec.bot), name: rec.bot.slice(0, 80), step: String(rec.step ?? '').slice(0, 80) });
+      finished.push({ t: typeof rec.t === 'string' ? rec.t : new Date(l.time * 1000).toISOString(), bot: botIdFor(rec.bot), name: rec.bot.slice(0, 80), step: zhStep(String(rec.step ?? '').slice(0, 80)) });
     }
     s.finished = finished;
     s.routines = [...routines].flatMap(([bot, { name, items }]) => items.map((r) => ({ bot, name, ...r })))

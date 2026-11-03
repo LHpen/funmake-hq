@@ -1,3 +1,4 @@
+import { zhStep } from './zhstep.js';
 const FLOOR_CN = { Ops: '运营', Sourcing: '选品', Dev: '开发', Stores: '店铺', News: '资讯' };
 // State reducer: journal records -> CONTRACT §4 state. Pure in-memory, clock injectable for tests. Runs in Node (the
 // server) and in the browser (the office reading a bots channel on ntfy.sh), so: no Node-only APIs here.
@@ -540,7 +541,7 @@ export class StateStore {
         group: bot.group,
         status: bot.status,
         effective_status: bot.eff,
-        step: bot.step,
+        step: zhStep(bot.step),
         task: bot.task,
         since: iso(bot.sinceMs),
         last_event: iso(bot.lastMs),
@@ -559,7 +560,7 @@ export class StateStore {
           tasks_done: bucket?.tasks_done ?? 0,
           hourly: bucket ? [...bucket.hourly] : new Array(24).fill(0),
         },
-        history: bot.history.map((h) => ({ t: iso(h.ms), status: h.status, step: h.step })),
+        history: bot.history.map((h) => ({ t: iso(h.ms), status: h.status, step: zhStep(h.step) })),
         schedule: sched ? [...sched.values()].map((s) => ({ routine: s.routine, cron: s.cron, last_run: iso(s.lastRunMs) })) : [],
       };
     }
@@ -579,7 +580,7 @@ export class StateStore {
       },
       floors,
       bots,
-      feed: this.feed.map((f) => ({ t: iso(f.ms), bot: f.id, name: f.name, status: f.status, step: f.step })),
+      feed: this.feed.map((f) => ({ t: iso(f.ms), bot: f.id, name: f.name, status: f.status, step: zhStep(f.step) })),
       meta: { ...this.meta },
     };
     this.cache = { nowSec: Math.floor(now / 1000), state };
