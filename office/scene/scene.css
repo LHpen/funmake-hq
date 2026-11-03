@@ -50,6 +50,10 @@
   color: #1D1D1F; font-size: 12px; font-weight: 600; line-height: 1; white-space: nowrap; letter-spacing: -.003em;
 }
 .hqt-text { overflow: hidden; text-overflow: ellipsis; }
+/* persistent bubbles (working / waiting) stay small and see-through so neighbours can overlap; hover brings one forward */
+.hqt[data-mode="work"] .hqt-pill, .hqt[data-mode="attn"] .hqt-pill { font-size: 11px; max-width: 150px; white-space: nowrap; opacity: .92; }
+.hqt[data-mode="work"] .hqt-stem { height: 8px; }
+.hqt[data-mode="hover"], .hqt[data-mode="sel"] { z-index: 10 !important; }
 .hqt-dot { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--c, #A1A1A6); }
 .hqt-stem { width: 1px; height: 14px; background: rgba(0, 0, 0, .18); }
 

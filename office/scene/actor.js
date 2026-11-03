@@ -187,8 +187,14 @@ export class Actor {
     const s = this.status, bot = this.bot;
     if (!bot) return;
     const attn = s === 'waiting_user' || s === 'error' || s === 'stuck';
-    const mode = this.selected ? 'sel' : attn ? 'attn' : this.hovered ? 'hover' : 'off';
+    const work = s === 'working' && !!bot.step;          // working: its current step stays above its head
+    const mode = this.selected ? 'sel' : attn ? 'attn' : work ? 'work' : this.hovered ? 'hover' : 'off';
     let text = bot.name || '';
+    if (mode === 'work') {
+      const step = String(bot.step);
+      const short = step.length > 14 ? `${step.slice(0, 13)}…` : step;
+      text = this.hovered ? `${bot.name} · ${step}` : short;
+    }
     if (mode === 'attn') {
       const reason = reasonText(s, bot.step);
       text = this.hovered ? `${bot.name} · ${reason}` : reason;

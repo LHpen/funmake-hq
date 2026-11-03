@@ -49,8 +49,13 @@ const DEMO_COLORS = {
 
 const hex = (str) => Array.from(new TextEncoder().encode(str), (b) => b.toString(16).padStart(2, '0')).join('');   // = Buffer hex, in any runtime
 
+const fnv = (str) => { let h = 0x811c9dc5; for (const b of new TextEncoder().encode(str)) h = Math.imul(h ^ b, 0x01000193) >>> 0; return h.toString(36); };
+
 export function botIdFor(name) {
   const slug = slugify(name);
+  // Non-Latin names: slugify drops those letters, so "Bot制造器" and "爆款生成器-bot" would both be "bot". Add a hash of the
+  // whole name so every name gets its own id.
+  if (/[^\x00-\x7f]/.test(String(name).trim())) return `${slug || 'bot'}-${fnv(String(name).trim())}`;
   if (!slug) return `bot-${slugify(hex(String(name)).slice(0, 12)) || 'x'}`;
   return SLUG_ALIASES[slug] || slug;
 }
@@ -180,6 +185,16 @@ export class StateStore {
   setFloorsConfig(obj) {
     this.floorsCfg = normFloorsCfg(obj);
     this.reassignAll();
+    this.dirty = true;
+  }
+
+  /** Forget a bot (it left the roster): its desk, its feed lines and its routines. */
+  removeBot(id) {
+    const bot = this.bots.get(id);
+    if (!bot) return;
+    if (bot.assign) this.members.get(bot.assign.floor)?.delete(bot.assign.desk);
+    this.bots.delete(id);
+    this.feed = this.feed.filter((f) => f.id !== id && f.bot !== id);
     this.dirty = true;
   }
 

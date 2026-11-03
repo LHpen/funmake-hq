@@ -49,6 +49,10 @@ export async function connectFeed({ topic, servers }, onState) {
   const store = new StateStore({ tz, quietIdleMs: QUIET_MS, hasAvatar: (id) => HANDMADE.has(id) });   // no GLB probe: every bot is generated from its look
   const cfg = {};                                        // per bot name: { look, chat_url } -> the store's bots config
   const routines = new Map();                            // bot id -> { name, items }
+  const alias = { '选品-Temu2': '选品-Temu' };              // posting name -> display name ({"aliases":{...}} adds more)
+  let roster = null;                                     // the latest roster: only these bots are shown
+  const canon = (n) => (typeof n === 'string' ? alias[n.trim()] || n.trim() : n);
+  const canonMap = (m) => Object.fromEntries(Object.entries(m).map(([k, v]) => [canon(k), v]));
   let check = null;                                      // the latest status check: { ms, names }
   let lines = [], saveTimer = 0;
   const seen = new Set();
@@ -132,7 +136,18 @@ export async function connectFeed({ topic, servers }, onState) {
     try { rec = JSON.parse(message); } catch { return false; }
     if (!rec || typeof rec !== 'object' || Array.isArray(rec)) return false;
     const t = typeof rec.t === 'string' ? rec.t : new Date(time * 1000).toISOString();
+    if (isMap(rec.aliases)) {
+      for (const [from, to] of Object.entries(rec.aliases).slice(0, 100)) if (typeof to === 'string' && to.trim()) alias[from.trim()] = to.trim().slice(0, 80);
+      return true;
+    }
+    for (const k of ['looks', 'groups', 'chat']) if (isMap(rec[k])) rec[k] = canonMap(rec[k]);
+    if (typeof rec.bot === 'string') rec.bot = canon(rec.bot);
+    if (isMap(rec.routines)) rec.routines.bot = canon(rec.routines.bot);
+    if (isMap(rec.check) && Array.isArray(rec.check.bots)) rec.check.bots = [...new Set(rec.check.bots.map(canon))];
     if (Array.isArray(rec.roster)) {
+      rec.roster = [...new Set(rec.roster.map(canon).filter((n) => typeof n === 'string' && n))];
+      roster = new Set(rec.roster.map(botIdFor));          // a new roster replaces the old one: drop bots that left
+      for (const id of [...store.bots.keys()]) if (!roster.has(id)) store.removeBot(id);
       for (const name of rec.roster.slice(0, 400)) {
         if (typeof name === 'string' && name.trim() && !store.bots.has(botIdFor(name))) store.apply({ t, bot: name, status: 'idle', step: '', listed: true }, { replay });
       }
@@ -175,6 +190,7 @@ export async function connectFeed({ topic, servers }, onState) {
       if (!check || ms >= check.ms) check = { ms, names };
       return true;
     }
+    if (roster && typeof rec.bot === 'string' && !roster.has(botIdFor(rec.bot))) return false;   // not on the roster (deleted bot)
     store.apply({ ...rec, t }, { replay });
     return true;
   }
@@ -187,6 +203,8 @@ export async function connectFeed({ topic, servers }, onState) {
       let rec;
       try { rec = JSON.parse(l.message); } catch { continue; }
       if (rec?.status !== 'done' || typeof rec.bot !== 'string') continue;
+      rec.bot = canon(rec.bot);
+      if (roster && !roster.has(botIdFor(rec.bot))) continue;
       finished.push({ t: typeof rec.t === 'string' ? rec.t : new Date(l.time * 1000).toISOString(), bot: botIdFor(rec.bot), name: rec.bot.slice(0, 80), step: zhStep(String(rec.step ?? '').slice(0, 80)) });
     }
     s.finished = finished;
@@ -194,7 +212,7 @@ export async function connectFeed({ topic, servers }, onState) {
       .sort((a, b) => (a.next_run ? Date.parse(a.next_run) : Infinity) - (b.next_run ? Date.parse(b.next_run) : Infinity));
     s.check = check && Date.now() - check.ms < CHECK_MS ? {
       t: new Date(check.ms).toISOString(),
-      bots: check.names.map((name) => {                  // answered = a status line of its own at or after the check
+      bots: check.names.filter((name) => !roster || roster.has(botIdFor(name))).map((name) => {                  // answered = a status line of its own at or after the check
         const id = botIdFor(name), seen = Date.parse(s.bots[id]?.last_seen ?? '');
         return { id, name, at: seen >= check.ms ? new Date(seen).toISOString() : null };
       }),

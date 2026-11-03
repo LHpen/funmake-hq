@@ -228,14 +228,13 @@ const CHAT_RING = 6;
 let chatCache = null;
 function chatSpots() {
   if (chatCache) return chatCache;
-  const seats = assets.spots.lounges.filter(Boolean), desks = assets.spots.desks.filter(Boolean);
-  const avg = (arr) => arr.reduce((v, s) => v.add(s.pos), new THREE.Vector3()).multiplyScalar(1 / Math.max(1, arr.length));
-  const lc = avg(seats), dc = avg(desks);
-  const dir = new THREE.Vector3(dc.x - lc.x, 0, dc.z - lc.z).normalize();
-  const y = 0;                                       // standing on the floor
+  // hand-picked: open floor in front of the lounge corner (x 3..8, z 0..4.7 in floorstyle.js), toward the camera side,
+  // so the TV, shelves, plants and the lift never hide a chatting bot. Extra circles step along the front aisle.
+  const CENTERS = [[1.55, 4.55], [-0.15, 4.55], [-1.85, 4.55]];
+  const y = 0;
   const out = [];
-  for (let ring = 0; ring < 3; ring++) {                       // up to 3 circles of 6
-    const c = new THREE.Vector3(lc.x + dir.x * (2.6 + ring * 1.6), y, lc.z + dir.z * (2.6 + ring * 1.6));
+  for (let ring = 0; ring < CENTERS.length; ring++) {
+    const c = new THREE.Vector3(CENTERS[ring][0], y, CENTERS[ring][1]);
     for (let i = 0; i < CHAT_RING; i++) {
       const a = (i / CHAT_RING) * Math.PI * 2 + ring * 0.5;
       const pos = new THREE.Vector3(c.x + Math.sin(a) * 0.78, y, c.z + Math.cos(a) * 0.78);
