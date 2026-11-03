@@ -14,7 +14,7 @@ export const LIMITS = {
   USAGE_STEP: 0.5,             // usage points (per cent of the limit) that count as work between two usage lines
   UNREPORTED_MS: 24 * 3600e3,  // how long "worked (unreported)" stays up when the bot stays silent
   DONE_MS: 60e3,
-  IDLE_MS: 3 * 3600e3,
+  IDLE_MS: 12 * 3600e3,       // a bot keeps its last status (working / waiting) until it posts a new one; 12 h = the mailbox window
   MAX_BOTS: 400,
 };
 

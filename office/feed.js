@@ -26,7 +26,7 @@ import { FEED_BASE, feedFromLink } from './lib/feedbase.js';
 
 const RELAY = 'https://relay.0xcodila.com', NTFY = 'https://ntfy.sh';
 const MAX_LINE = 4096, KEEP = 600, TICK_MS = 30e3, DAY_MS = 24 * 3600e3, PING_MS = 60e3;
-const QUIET_MS = 20 * 60e3, CHECK_MS = 6 * 3600e3;    // a silent worker turns idle; a status check stays up this long
+const QUIET_MS = 12 * 3600e3, CHECK_MS = 6 * 3600e3;    // a silent worker turns idle; a status check stays up this long
 // Everyone's bots, ours included, are built from their look (the app's 14 avatars and 11 colours, read from a
 // screenshot), so a bot in the office is the bot in the app. The hand-made GLBs in assets/blobs/ stay for the local server.
 const HANDMADE = new Set();
