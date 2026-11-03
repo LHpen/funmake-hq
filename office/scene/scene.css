@@ -51,7 +51,7 @@
 }
 .hqt-text { overflow: hidden; text-overflow: ellipsis; }
 /* persistent bubbles (working / waiting) stay small and see-through so neighbours can overlap; hover brings one forward */
-.hqt[data-mode="work"] .hqt-pill, .hqt[data-mode="attn"] .hqt-pill { font-size: 11px; max-width: 150px; white-space: nowrap; opacity: .92; }
+.hqt[data-mode="work"] .hqt-pill, .hqt[data-mode="attn"] .hqt-pill { font-size: 10px; max-width: 120px; white-space: nowrap; opacity: .92; }
 .hqt[data-mode="work"] .hqt-stem { height: 8px; }
 .hqt[data-mode="hover"], .hqt[data-mode="sel"] { z-index: 10 !important; }
 .hqt-dot { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--c, #A1A1A6); }

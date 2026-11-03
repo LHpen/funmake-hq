@@ -375,9 +375,9 @@ export class Actor {
         const k = (t + this.phase) % 1.6;
         if (k < 0.45) { ox = 0.06 * Math.sin(k * 70); rz = 0.08 * Math.sin(k * 55); }
       }
-      if (s === 'waiting_user' && !this.anim && !this.spot?.chat) {
+      if (s === 'waiting_user' && !this.anim && !this.spot?.chat) {   // a small "hand up" bob now and then, calm
         this.nextAction -= dt;
-        if (this.nextAction <= 0) { this.hop(0.32); this.nextAction = 1.7 + Math.random() * 0.6; }
+        if (this.nextAction <= 0) { this.hop(0.14); this.nextAction = 4 + Math.random() * 2; }
       }
     }
 
@@ -499,6 +499,7 @@ export function jelly(color) {
 }
 
 function reasonText(status, step) {
+  if (status === 'waiting_user') return '等你处理';
   let t = (step || '').trim();
   if (status === 'stuck' || !t) return STATUS_LABEL[status] || '';
   t = t.charAt(0).toUpperCase() + t.slice(1);

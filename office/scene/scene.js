@@ -174,7 +174,6 @@ function sync() {
   for (const [id, actor] of actors) if (!ids.has(id)) { actor.retire(); retiring.add(actor); actors.delete(id); }
 
   const maxShare = Math.max(0.0001, ...floorBots.map((b) => b.usage_share || 0));
-  const lounge = assignLounge(floorBots);
   const deskOf = zoneDesks(floorBots, inst);
   const flags = new Array(20).fill(0);
   const delay = Math.max(0, switchedAt + 0.55 - nowSec);
@@ -185,10 +184,13 @@ function sync() {
       actors.set(bot.id, actor);
       attachModel(actor, bot);
     }
+    // Calm office: every bot stays in its own seat. Resting (idle / done) bots sip tea at the desk instead of walking
+    // to the lounge; nobody gathers in chat circles.
     const deskIdx = deskOf.get(bot.id) ?? (DESK_ORDER[(bot.desk || 1) - 1] || 1) - 1;
     const desk = assets.spots.desks[deskIdx] || assets.spots.desks[0];
-    if ((bot.effective_status || bot.status) === 'working' && !lounge.has(bot.id)) flags[deskIdx] = 1;
-    actor.update(bot, lounge.get(bot.id) || desk, { maxShare, selectedBot: view.selectedBot });
+    const st = bot.effective_status || bot.status;
+    if (st === 'working') flags[deskIdx] = 1;
+    actor.update(bot, st === 'idle' || st === 'done' ? teaSeat(desk) : desk, { maxShare, selectedBot: view.selectedBot });
   }
   building.setScreens(flags);
   const floor = floors.find((f) => f.id === building.activeId);
@@ -265,7 +267,13 @@ function zoneDesks(bots, inst) {
 
 // Spots by status: working -> desk (typing); idle/done -> lounge seats (tea); everyone else that is not
 // working (waiting_user, stuck, unknown, lounge overflow) -> a chat circle next to the lounge. error stays at the desk.
-// Chatters stand in small circles of 2-3 spread over open floor: a row along the front aisle (in front of the zone
+const teaSeats = new WeakMap();          // desk spot -> the same seat flagged for the tea pose (stable object, no travel)
+function teaSeat(desk) {
+  if (!teaSeats.has(desk)) teaSeats.set(desk, { ...desk, lounge: true });
+  return teaSeats.get(desk);
+}
+
+// (unused since the calm seated layout) Chatters stand in small circles of 2-3 spread over open floor: a row along the front aisle (in front of the zone
 // labels, clear of the tables) and two by the right wall between the lounge and the kitchen counter. Never by the TV
 // (back-left wall) or behind the tables. Circles fill in this order; more than 21 chatters wrap round again.
 const CHAT_CENTERS = [[-3.6, 4.6], [1.4, 4.6], [-6.1, 4.6], [-1.1, 4.6], [4.7, -2.3], [6.9, -2.3], [5.8, -0.9]];
