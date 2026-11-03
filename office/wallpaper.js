@@ -59,8 +59,8 @@ export function renderUI(state) {
     total++;
     switch (bot.effective_status || bot.status) {
       case 'working': working++; break;
-      case 'waiting_user': case 'stuck': attention++; break;
-      case 'error': error++; break;
+      case 'waiting_user': attention++; break;
+      case 'error': case 'stuck': error++; break;
       default: break;
     }
   }

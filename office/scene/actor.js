@@ -6,9 +6,9 @@ import { CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 import { Spring, REDUCED, clamp, smoothstep } from './spring.js';
 
 export const STATUS_COLOR = {
-  working: '#34C759', background: '#5AC8FA', idle: '#A1A1A6', waiting_user: '#FF9F0A', error: '#FF3B30', stuck: '#FF9500', done: '#0A84FF',
+  working: '#34C759', background: '#5AC8FA', idle: '#A1A1A6', waiting_user: '#FF9F0A', error: '#FF3B30', stuck: '#FF3B30', done: '#0A84FF',
 };
-const STATUS_LABEL = { waiting_user: '等你处理', error: '出错', stuck: '卡住了？', done: '完成', working: '工作中', background: '后台运行中', idle: '休息中' };
+const STATUS_LABEL = { waiting_user: '等你处理', error: '出错', stuck: '卡住', done: '完成', working: '工作中', background: '后台运行中', idle: '休息中' };
 const CAMERA_YAW = Math.PI / 4;     // isometric camera sits on +X +Z
 const RESTING_TURN = 0.42;          // blobs lean toward the camera a bit
 const MODEL_HEIGHT = 1.0;
@@ -179,7 +179,7 @@ export class Actor {
 
     if (statusChanged && prev) {
       if (status === 'done') { this.celebrate(); this.hop(0.45); }
-      else if (status === 'waiting_user' || status === 'error') this.hop(0.3);
+      else if (status === 'waiting_user' || status === 'error' || status === 'stuck') this.hop(0.3);
     }
   }
 
@@ -454,8 +454,7 @@ export class Actor {
     // status ring: quiet unless it matters
     const pulse = s === 'working' ? 0.14 + 0.05 * Math.sin(t * 3 + this.phase)
       : s === 'background' ? 0.16
-      : s === 'waiting_user' || s === 'error' ? 0.4 + 0.25 * (0.5 + 0.5 * Math.sin(t * 5))
-      : s === 'stuck' ? 0.3 + 0.15 * Math.sin(t * 2) : 0;
+      : s === 'waiting_user' || s === 'error' || s === 'stuck' ? 0.4 + 0.25 * (0.5 + 0.5 * Math.sin(t * 5)) : 0;
     const wantRing = this.selected ? 0.8 : this.hovered ? Math.max(0.4, pulse) : pulse;
     this.ring.material.opacity = wantRing * clamp(sc, 0, 1);
     this.ring.scale.setScalar(this.selected ? 1.12 : 1);

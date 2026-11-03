@@ -413,7 +413,10 @@ export class StateStore {
     if (age > LIMITS.IDLE_MS) return 'idle';
     switch (bot.status) {
       case 'done': return age <= LIMITS.DONE_MS ? 'done' : 'idle';
-      case 'working': return age > this.quiet.ms ? this.quiet.to : 'working';
+      // working / background with no report for 30 min: stuck (red), not idle — the board should show silence as a problem
+      case 'working':
+      case 'background':
+        return age > LIMITS.STUCK_MS ? 'stuck' : bot.status;
       default: return bot.status;
     }
   }

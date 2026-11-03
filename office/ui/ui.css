@@ -55,7 +55,7 @@
 :where(#topbar, #floors, #panel, #feed, .bhq-dock, .bhq-sheet) [data-s="background"] { --s: #5AC8FA; }
 :where(#topbar, #floors, #panel, #feed, .bhq-dock, .bhq-sheet) [data-s="waiting_user"] { --s: #FFB020; }
 :where(#topbar, #floors, #panel, #feed, .bhq-dock, .bhq-sheet) [data-s="error"] { --s: #FF453A; }
-:where(#topbar, #floors, #panel, #feed, .bhq-dock, .bhq-sheet) [data-s="stuck"] { --s: #FF9F0A; }
+:where(#topbar, #floors, #panel, #feed, .bhq-dock, .bhq-sheet) [data-s="stuck"] { --s: #FF453A; }
 :where(#topbar, #floors, #panel, #feed, .bhq-dock, .bhq-sheet) [data-s="done"] { --s: #8FA2FF; }
 
 .bhq-num { font-variant-numeric: tabular-nums; }
@@ -76,8 +76,8 @@
 }
 .bhq-surface[data-s="background"] { --base: #123A4D; --glow: #5AC8FA; --hi: #CFF0FF; --mid: #9ADCF7; --dim: #7CC0DE; --g1: .35; --g2: .15; }
 .bhq-surface[data-s="working"] { --base: #2F4A17; --glow: #9BDC3C; --hi: #E7FF8C; --mid: #C2E784; --dim: #A5C96E; --g1: .5; --g2: .22; }
-.bhq-surface[data-s="waiting_user"], .bhq-surface[data-s="stuck"] { --base: #6E3F06; --glow: #FFB23A; --hi: #FFE2A6; --mid: #FFD28E; --dim: #E8B968; --g1: .5; --g2: .22; }
-.bhq-surface[data-s="error"] { --base: #8C1620; --glow: #FF4A5E; --hi: #FFE1E4; --mid: #FFB8BF; --dim: #F0959F; --g1: .5; --g2: .22; }
+.bhq-surface[data-s="waiting_user"] { --base: #6E3F06; --glow: #FFB23A; --hi: #FFE2A6; --mid: #FFD28E; --dim: #E8B968; --g1: .5; --g2: .22; }
+.bhq-surface[data-s="error"], .bhq-surface[data-s="stuck"] { --base: #8C1620; --glow: #FF4A5E; --hi: #FFE1E4; --mid: #FFB8BF; --dim: #F0959F; --g1: .5; --g2: .22; }
 .bhq-surface[data-s="done"] { --base: #3B3FB0; --glow: #8FA2FF; --hi: #EEF0FF; --mid: #CDD3FF; --dim: #A9B2F0; --g1: .5; --g2: .22; }
 
 .bhq-glow::before, .bhq-glow::after {
@@ -306,10 +306,10 @@
 .bhq-mname { display: block; font: 900 14px/1.2 var(--bhq-round); color: var(--hi); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .bhq-mstep { display: block; margin-top: 2px; color: var(--mid); font: 800 12.5px/1.3 var(--bhq-round); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* whoever needs the user is lit in the colour of what they need (the wallpaper's "needs you" cards, in a row) */
-.bhq-member[data-s="waiting_user"], .bhq-member[data-s="stuck"] { --base: #51412B; background: linear-gradient(90deg, rgba(255, 178, 58, .3), rgba(255, 178, 58, .11)); }
-.bhq-member[data-s="error"] { --base: #532D34; background: linear-gradient(90deg, rgba(255, 74, 94, .32), rgba(255, 74, 94, .11)); }
-.bhq-member[data-s="waiting_user"] .bhq-mstep, .bhq-member[data-s="stuck"] .bhq-mstep { color: #FFD28E; }
-.bhq-member[data-s="error"] .bhq-mstep { color: #FFB8BF; }
+.bhq-member[data-s="waiting_user"] { --base: #51412B; background: linear-gradient(90deg, rgba(255, 178, 58, .3), rgba(255, 178, 58, .11)); }
+.bhq-member[data-s="error"], .bhq-member[data-s="stuck"] { --base: #532D34; background: linear-gradient(90deg, rgba(255, 74, 94, .32), rgba(255, 74, 94, .11)); }
+.bhq-member[data-s="waiting_user"] .bhq-mstep { color: #FFD28E; }
+.bhq-member[data-s="error"] .bhq-mstep, .bhq-member[data-s="stuck"] .bhq-mstep { color: #FFB8BF; }
 .bhq-member:is([data-s="waiting_user"], [data-s="stuck"], [data-s="error"]):hover { filter: brightness(1.14); }
 
 /* ====================================================================== right: bot card */
@@ -358,8 +358,9 @@
 
 .bhq-stepsblock { margin-top: 18px; padding-bottom: 12px; }
 .bhq-steps { display: flex; flex-direction: column; gap: 9px; margin-top: 9px; }
-.bhq-step-row { display: flex; align-items: baseline; gap: 10px; font: 800 12.5px/1.35 var(--bhq-round); }
-.bhq-step-row time { flex: none; width: 36px; color: var(--dim); }
+.bhq-step-row { display: flex; align-items: baseline; gap: 8px; font: 800 12.5px/1.35 var(--bhq-round); }
+.bhq-step-row time { flex: none; min-width: 36px; color: var(--dim); }
+.bhq-step-row .bhq-dot { flex: none; align-self: center; }
 .bhq-step-row span {
   color: var(--mid); min-width: 0;
   display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden;
@@ -828,3 +829,14 @@ html.bhq-phone body { overscroll-behavior: none; -webkit-tap-highlight-color: tr
 .bhq-cm-step { color: #AEAEB2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
 .bhq-cm-time { color: #8E8E93; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .bhq-cm-empty { padding: 8px; color: #8E8E93; }
+
+/* tonight watch list */
+.bhq-tonight { list-style: none; margin: 0; padding: 4px 0 0; display: flex; flex-direction: column; gap: 6px; }
+.bhq-titem { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center; padding: 4px 2px; font: 600 12.5px/1.3 var(--bhq-round); color: var(--hi, #F5F5F7); }
+.bhq-titem.is-done .bhq-ttitle { text-decoration: line-through; opacity: .55; }
+.bhq-titem input { accent-color: #FFB020; width: 14px; height: 14px; }
+.bhq-ttitle { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bhq-tdel { border: 0; background: none; color: #8E8E93; cursor: pointer; font: 700 16px/1 system-ui; padding: 0 4px; border-radius: 6px; }
+.bhq-tdel:hover { color: #FF453A; background: rgba(255, 69, 58, .12); }
+.bhq-tadd { margin-top: 8px; width: 100%; height: 30px; border-radius: 10px; border: 1px dashed rgba(255,255,255,.18); background: transparent; color: var(--mid, #C7C7CC); font: 700 12px/1 var(--bhq-round); cursor: pointer; }
+.bhq-tadd:hover { border-color: rgba(255,176,32,.5); color: #FFE2A6; background: rgba(255,176,32,.08); }

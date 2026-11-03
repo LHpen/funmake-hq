@@ -30,7 +30,7 @@ const THUMB_BASE = new URL('../../assets/blobs/thumbs/', import.meta.url).href;
 // the product logo, exactly as is (a 400x400 square), shown small in the brand pill
 const MARK_SRC = new URL('../../assets/brand/logo-mark.png', import.meta.url).href;
 const FEED_ROWS = 4;
-const STEPS_SHOWN = 3;
+const STEPS_SHOWN = 8;
 const FEED_OUT_MS = 420;
 const FINISHED_MAX = 60;
 const DAY_MS = 24 * 3600 * 1000;
@@ -67,12 +67,12 @@ const WORDS = {
   done: ['完成', '完成'],
 };
 
-// Counters pill. "attention" folds stuck into waiting_user: both need a human.
+// Counters pill. Stuck (silent working/background >30m) folds into error (red); waiting stays amber.
 const SUMMARY = [
   { key: 'working', s: 'working', lead: true, n: (c) => c.working },
   { key: 'background', s: 'background', n: (c) => c.background || 0, hideZero: true },
-  { key: 'attention', s: 'waiting_user', alert: true, n: (c) => c.waiting_user + c.stuck },
-  { key: 'error', s: 'error', alert: true, n: (c) => c.error },
+  { key: 'attention', s: 'waiting_user', alert: true, n: (c) => c.waiting_user },
+  { key: 'error', s: 'error', alert: true, n: (c) => c.error + c.stuck },
   { key: 'idle', s: 'idle', n: (c) => c.idle },
   { key: 'done', s: 'done', n: (c) => c.done, hideZero: true },
 ];
@@ -721,7 +721,7 @@ function setDockOpen(card, on, save = true) {
   }
   if (save) {
     const o = {};
-    for (const k of ['waiting', 'finished', 'routines']) o[k] = !!d[k].open;
+    for (const k of ['waiting', 'finished', 'routines', 'tonight']) o[k] = !!(d[k] && d[k].open);
     lsSet(LS_DOCK, JSON.stringify(o));
   }
   fitDock(d.avail == null ? Infinity : d.avail);
@@ -753,9 +753,64 @@ function setWaitBlur(on, save = true) {
   if (save) lsSet(LS_BLUR, d.blurred ? '1' : '0');
 }
 
+const LS_TONIGHT = 'funmake-hq-tonight';
+
+function loadTonight() {
+  try {
+    const a = JSON.parse(localStorage.getItem(LS_TONIGHT) || '[]');
+    return Array.isArray(a) ? a.filter((x) => x && typeof x === 'object') : [];
+  } catch { return []; }
+}
+function saveTonight(items) {
+  try { localStorage.setItem(LS_TONIGHT, JSON.stringify(items.slice(0, 20))); } catch {}
+}
+function addTonightItem() {
+  const title = (window.prompt('今晚要盯的事（一行）') || '').trim();
+  if (!title) return;
+  const items = loadTonight();
+  items.unshift({ id: 't' + Date.now().toString(36), title: title.slice(0, 80), note: '', done: false });
+  saveTonight(items);
+  renderTonight();
+}
+function renderTonight() {
+  const d = U && U.dock;
+  if (!d || !d.tlist) return;
+  const items = loadTonight();
+  d.tlist.textContent = '';
+  if (d.tonight && d.tonight.count) {
+    const n = items.filter((x) => !x.done).length;
+    setText(d.tonight.count, n);
+    setAttr(d.tonight.count, 'data-s', n ? 'waiting_user' : null);
+    setCls(d.tonight.root, 'has-rows', items.length > 0);
+    d.tonight.rows = items.length;
+  }
+  if (!items.length) {
+    d.tlist.append(h('p', { class: 'bhq-note', text: '还没有事项。点「添加」记下今晚要盯的。' }));
+    return;
+  }
+  for (const it of items) {
+    const cb = h('input', { type: 'checkbox' });
+    cb.checked = !!it.done;
+    cb.addEventListener('change', () => {
+      const all = loadTonight();
+      const row = all.find((x) => x.id === it.id);
+      if (row) { row.done = cb.checked; saveTonight(all); renderTonight(); }
+    });
+    const del = h('button', { class: 'bhq-tdel', type: 'button', title: '删除', 'aria-label': '删除', text: '×' });
+    del.addEventListener('click', () => {
+      saveTonight(loadTonight().filter((x) => x.id !== it.id));
+      renderTonight();
+    });
+    const li = h('li', { class: 'bhq-titem' + (it.done ? ' is-done' : ''), role: 'listitem' },
+      cb, h('span', { class: 'bhq-ttitle', text: it.title || '' }), del);
+    d.tlist.append(li);
+  }
+}
+
 function buildDock(floors, feed) {
   const root = own(h('aside', { class: 'bhq-dock', 'aria-label': '等我处理、已完成和定时任务' }));
   const check = dockCard('check', '状态检查');
+  const tonight = dockCard('tonight', '今晚要盯');
   const waiting = dockCard('waiting', '等我处理', { eye: true });
   const finished = dockCard('finished', '已完成');
   const routines = dockCard('routines', '定时任务');
@@ -777,20 +832,26 @@ function buildDock(floors, feed) {
   check.inner.append(cl, cnote);
   check.root.hidden = true;                                   // only while a check runs
 
-  root.append(check.root, waiting.root, finished.root, routines.root);
+  const tlist = h('ul', { class: 'bhq-tonight', role: 'list' });
+  const tadd = h('button', { class: 'bhq-tadd', type: 'button', text: '添加' });
+  tonight.inner.append(tlist, tadd);
+  tadd.addEventListener('click', () => addTonightItem());
+
+  root.append(check.root, tonight.root, waiting.root, finished.root, routines.root);
   document.body.append(root);
 
   U.dock = {
-    root, check, waiting, finished, routines, wlist, wempty, tl, fempty, rl, rempty, cl, cnote,
+    root, check, tonight, waiting, finished, routines, wlist, wempty, tl, fempty, rl, rempty, cl, cnote, tlist,
     lru: [], wrows: new Map(), crows: new Map(), checkT: null, finSig: null, finRefs: [], routSig: null, routRefs: [], copied: new Map(), blurred: false,
     floors, feed,
   };
+  renderTonight();
 
   // open / folded: what the person left last time (the waiting card is open by default)
   let saved = null;
   try { saved = JSON.parse(lsGet(LS_DOCK) || 'null'); } catch { saved = null; }
-  for (const k of ['routines', 'finished', 'waiting']) { // waiting last: it is the one that stays open when there is no room for all
-    setDockOpen(U.dock[k], saved && typeof saved[k] === 'boolean' ? saved[k] : k === 'waiting', false);
+  for (const k of ['routines', 'finished', 'waiting', 'tonight']) { // waiting last-ish: stays open when there is no room for all
+    setDockOpen(U.dock[k], saved && typeof saved[k] === 'boolean' ? saved[k] : (k === 'waiting' || k === 'tonight'), false);
   }
   waiting.eye.addEventListener('click', () => setWaitBlur(!U.dock.blurred));
   setWaitBlur(lsGet(LS_BLUR) === '1', false);
@@ -1127,7 +1188,7 @@ function safe(where, fn) {
 /* ---- top bar */
 
 // Counter pill dropdown: the bots in one status (name · step · report time); a name opens its card.
-const CHIP_STATUSES = { attention: ['waiting_user', 'stuck'] };
+const CHIP_STATUSES = { attention: ['waiting_user'], error: ['error', 'stuck'] };
 let chipMenu = null;
 function closeChipMenu() { if (chipMenu) { chipMenu.el.remove(); chipMenu = null; } }
 document.addEventListener('click', (e) => { if (chipMenu && !chipMenu.el.contains(e.target)) closeChipMenu(); });
@@ -1173,8 +1234,8 @@ function renderTopbar(state) {
     setCls(r.el, 'is-alert', !!p.alert && n > 0);
     if (p.hideZero) setHidden(r.el, n === 0);
     let title = n + ' ' + label;
-    if (p.key === 'attention' && c.stuck > 0) {
-      title = c.waiting_user + ' ' + statusWord('waiting_user', c.waiting_user) + ', ' + c.stuck + ' stuck';
+    if (p.key === 'error' && c.stuck > 0) {
+      title = (c.error ? c.error + ' ' + statusWord('error', c.error) + ', ' : '') + c.stuck + ' ' + statusWord('stuck', c.stuck);
     }
     setAttr(r.el, 'title', title);
   }
@@ -1255,8 +1316,8 @@ function renderFloors(state, o) {
     let need = null;
     for (const id of ids) {
       const st = effStatus(bots[id]);
-      if (st === 'error') { need = 'error'; break; }
-      if (st === 'waiting_user' || st === 'stuck') need = 'waiting_user';
+      if (st === 'error' || st === 'stuck') { need = 'error'; break; }
+      if (st === 'waiting_user') need = 'waiting_user';
     }
     setAttr(r.btn, 'data-alert', need);
 
@@ -1384,9 +1445,9 @@ function renderTeam(state, floor, o) {
   let working = 0, waiting = 0, errors = 0;
   for (const id of ids) {
     const s = effStatus(bots[id]);
-    if (s === 'working') working++;
-    else if (s === 'waiting_user' || s === 'stuck') waiting++;
-    else if (s === 'error') errors++;
+    if (s === 'working' || s === 'background') working++;
+    else if (s === 'waiting_user') waiting++;
+    else if (s === 'error' || s === 'stuck') errors++;
   }
   setText(p.teamSub, floor ? n + ' 个 bot' : (U.phone ? '在上方选择楼层' : '在左侧选择楼层'));
   // green while anyone works, graphite at rest (the wallpaper's team card)
@@ -1428,9 +1489,13 @@ function renderTeam(state, floor, o) {
 /* ---- bot card */
 
 function histRow(ev) {
-  return h('li', { class: 'bhq-step-row' },
-    h('time', { class: 'bhq-num', text: hhmm(parseTs(ev.t)) }),
-    h('span', { text: ev.step || statusLabel(ev.status), title: ev.step || '' }));
+  const st = statusLabel(ev.status);
+  const step = ev.step || '';
+  const line = step && step !== st ? st + ' · ' + step : (step || st);
+  return h('li', { class: 'bhq-step-row', 'data-s': ev.status || '' },
+    h('time', { class: 'bhq-num', text: (() => { const ms = parseTs(ev.t); return ms == null ? '–' : reportTime(ms); })() }),
+    h('i', { class: 'bhq-dot', 'data-s': ev.status || 'idle', 'aria-hidden': 'true' }),
+    h('span', { text: line, title: line }));
 }
 
 function renderCard(state, bot) {
@@ -1482,10 +1547,8 @@ function renderCard(state, bot) {
     setText(c.shareNum, Math.round(share * 100) + '%');
   }
 
-  // last steps (rebuilt only when they change); the newest entry is usually the current step, already shown above
-  let hist = (bot.history || []).slice(0, STEPS_SHOWN + 1);
-  if (hist.length > 1 && hist[0].step === bot.step) hist = hist.slice(1);
-  hist = hist.slice(0, STEPS_SHOWN);
+  // last ~8 status reports from the feed (newest first); show what exists if history is short
+  const hist = (bot.history || []).slice(0, STEPS_SHOWN);
   const sig = bot.id + '\n' + hist.map((x) => x.t + '|' + x.status + '|' + x.step).join('\n');
   if (sig !== c.histSig) {
     c.histSig = sig;
