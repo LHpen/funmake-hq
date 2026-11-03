@@ -32,35 +32,35 @@
       "imports": {
         "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
         "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/",
-        "./audio/sound.js": "./audio/sound.js?v=20261103e",
-        "./feed.js": "./feed.js?v=20261103e",
-        "./lib/feedbase.js": "./lib/feedbase.js?v=20261103e",
-        "./lib/state.js": "./lib/state.js?v=20261103e",
-        "./lib/util.js": "./lib/util.js?v=20261103e",
-        "./lib/zhstep.js": "./lib/zhstep.js?v=20261103e",
-        "./scene/actor.js": "./scene/actor.js?v=20261103e",
-        "./scene/blobgen.js": "./scene/blobgen.js?v=20261103e",
-        "./scene/building.js": "./scene/building.js?v=20261103e",
-        "./scene/daylight.js": "./scene/daylight.js?v=20261103e",
-        "./scene/floorstyle.js": "./scene/floorstyle.js?v=20261103e",
-        "./scene/looks.js": "./scene/looks.js?v=20261103e",
-        "./scene/office.js": "./scene/office.js?v=20261103e",
-        "./scene/outlines.js": "./scene/outlines.js?v=20261103e",
-        "./scene/post.js": "./scene/post.js?v=20261103e",
-        "./scene/scene.js": "./scene/scene.js?v=20261103e",
-        "./scene/spring.js": "./scene/spring.js?v=20261103e",
-        "./scene/studio.js": "./scene/studio.js?v=20261103e",
-        "./scene/sunpatch.js": "./scene/sunpatch.js?v=20261103e",
-        "./scene/walls.js": "./scene/walls.js?v=20261103e",
-        "./share/share.js": "./share/share.js?v=20261103e",
-        "./ui/ui.js": "./ui/ui.js?v=20261103e",
-        "./wallpaper.js": "./wallpaper.js?v=20261103e"
+        "./audio/sound.js": "./audio/sound.js?v=20261103f",
+        "./feed.js": "./feed.js?v=20261103f",
+        "./lib/feedbase.js": "./lib/feedbase.js?v=20261103f",
+        "./lib/state.js": "./lib/state.js?v=20261103f",
+        "./lib/util.js": "./lib/util.js?v=20261103f",
+        "./lib/zhstep.js": "./lib/zhstep.js?v=20261103f",
+        "./scene/actor.js": "./scene/actor.js?v=20261103f",
+        "./scene/blobgen.js": "./scene/blobgen.js?v=20261103f",
+        "./scene/building.js": "./scene/building.js?v=20261103f",
+        "./scene/daylight.js": "./scene/daylight.js?v=20261103f",
+        "./scene/floorstyle.js": "./scene/floorstyle.js?v=20261103f",
+        "./scene/looks.js": "./scene/looks.js?v=20261103f",
+        "./scene/office.js": "./scene/office.js?v=20261103f",
+        "./scene/outlines.js": "./scene/outlines.js?v=20261103f",
+        "./scene/post.js": "./scene/post.js?v=20261103f",
+        "./scene/scene.js": "./scene/scene.js?v=20261103f",
+        "./scene/spring.js": "./scene/spring.js?v=20261103f",
+        "./scene/studio.js": "./scene/studio.js?v=20261103f",
+        "./scene/sunpatch.js": "./scene/sunpatch.js?v=20261103f",
+        "./scene/walls.js": "./scene/walls.js?v=20261103f",
+        "./share/share.js": "./share/share.js?v=20261103f",
+        "./ui/ui.js": "./ui/ui.js?v=20261103f",
+        "./wallpaper.js": "./wallpaper.js?v=20261103f"
       }
     }
   </script>
   <!-- the two big downloads start with the page, not after the scripts that ask for them (after the import map) -->
   <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js">
-  <link rel="preload" href="../assets/office/office.glb?v=20261103e" as="fetch" crossorigin>
+  <link rel="preload" href="../assets/office/office.glb?v=20261103f" as="fetch" crossorigin>
 </head>
 <body>
   <main id="scene" aria-label="Office"><div class="hq-loading" role="status"><span class="hq-loading-label">Building the office</span><span class="hq-loading-track"><i></i></span></div></main>
@@ -68,7 +68,7 @@
   <nav id="floors" aria-label="Floors"></nav>
   <aside id="panel" aria-label="Bot card and floor team"></aside>
   <section id="feed" aria-label="Event feed"></section>
-  <script type="module" src="./app.js?v=20261103e"></script>
+  <script type="module" src="./app.js?v=20261103f"></script>
 <div id="fm-daynight" role="group" aria-label="白天 / 夜晚" style="position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:50;display:flex;gap:4px;padding:4px;border-radius:999px;background:rgba(30,32,38,.82);backdrop-filter:blur(8px);font:600 12px Inter,system-ui,sans-serif">
 <button data-t="13:00">☀ 白天</button><button data-t="23:00">☾ 夜晚</button><button data-t="auto">⏱ 自动</button></div>
 <style>#fm-daynight button{border:0;border-radius:999px;padding:5px 11px;background:transparent;color:#ddd;cursor:pointer;font:inherit}#fm-daynight button[aria-pressed=true]{background:#fff;color:#111}</style>

@@ -250,7 +250,7 @@ function shParts(ms) { const o = {}; for (const p of SH_FMT.formatToParts(new Da
 function reportTime(ms) {
   const a = shParts(ms), n = shParts(nowMs());
   const t = a.hour + ':' + a.minute;
-  return a.year === n.year && a.month === n.month && a.day === n.day ? t : a.month + '/' + a.day + ' ' + t;
+  return a.year === n.year && a.month === n.month && a.day === n.day ? t : Number(a.month) + '/' + Number(a.day) + ' ' + t;
 }
 // "now", "12m", "3h", "2d": how long a bot has been silent, small enough for every row
 function relShort(ms) {
@@ -509,6 +509,9 @@ function buildTopbar(root) {
     const el = h('span', { class: 'bhq-schip' + (p.lead ? ' bhq-schip--lead' : ''), 'data-s': p.s },
       h('i', { class: 'bhq-dot', 'data-s': p.s, 'aria-hidden': 'true' }), num, label);
     chips[p.key] = { el, num, label, cfg: p };
+    el.style.cursor = 'pointer';
+    el.setAttribute('role', 'button');
+    el.addEventListener('click', (e) => { e.stopPropagation(); toggleChipMenu(p, el); });
     summary.append(el);
   }
 
@@ -1122,6 +1125,38 @@ function safe(where, fn) {
 }
 
 /* ---- top bar */
+
+// Counter pill dropdown: the bots in one status (name · step · report time); a name opens its card.
+const CHIP_STATUSES = { attention: ['waiting_user', 'stuck'] };
+let chipMenu = null;
+function closeChipMenu() { if (chipMenu) { chipMenu.el.remove(); chipMenu = null; } }
+document.addEventListener('click', (e) => { if (chipMenu && !chipMenu.el.contains(e.target)) closeChipMenu(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeChipMenu(); });
+function toggleChipMenu(p, anchor) {
+  const same = chipMenu && chipMenu.key === p.key;
+  closeChipMenu();
+  if (same) return;
+  const want = CHIP_STATUSES[p.key] || [p.s];
+  const bots = (U.last && U.last.state && U.last.state.bots) || {};
+  const ids = Object.keys(bots).filter((id) => want.includes(effStatus(bots[id])))
+    .sort((a, b) => (parseTs(bots[b].last_seen) || 0) - (parseTs(bots[a].last_seen) || 0));
+  const el = h('div', { class: 'bhq-chipmenu', 'data-s': p.s, role: 'menu' });
+  if (!ids.length) el.append(h('div', { class: 'bhq-cm-empty', text: '暂无' }));
+  for (const id of ids) {
+    const bot = bots[id], at = parseTs(bot.last_seen);
+    const row = h('button', { class: 'bhq-cm-row', type: 'button', role: 'menuitem' },
+      h('b', { class: 'bhq-cm-name', text: bot.name || id }),
+      h('span', { class: 'bhq-cm-step', text: bot.step || '' }),
+      h('span', { class: 'bhq-cm-time', text: at == null ? '–' : reportTime(at) }));
+    row.addEventListener('click', (e) => { e.stopPropagation(); closeChipMenu(); if (U.h.onSelectBot) U.h.onSelectBot(id); });
+    el.append(row);
+  }
+  const r = anchor.getBoundingClientRect();
+  el.style.top = Math.round(r.bottom + 8) + 'px';
+  el.style.left = Math.round(Math.max(8, Math.min(r.left, window.innerWidth - 328))) + 'px';
+  document.body.append(el);
+  chipMenu = { key: p.key, el };
+}
 
 function renderTopbar(state) {
   const t = U.top;
