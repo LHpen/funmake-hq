@@ -31,13 +31,36 @@
     {
       "imports": {
         "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
-        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/",
+        "./audio/sound.js": "./audio/sound.js?v=20261103c",
+        "./feed.js": "./feed.js?v=20261103c",
+        "./lib/feedbase.js": "./lib/feedbase.js?v=20261103c",
+        "./lib/state.js": "./lib/state.js?v=20261103c",
+        "./lib/util.js": "./lib/util.js?v=20261103c",
+        "./lib/zhstep.js": "./lib/zhstep.js?v=20261103c",
+        "./scene/actor.js": "./scene/actor.js?v=20261103c",
+        "./scene/blobgen.js": "./scene/blobgen.js?v=20261103c",
+        "./scene/building.js": "./scene/building.js?v=20261103c",
+        "./scene/daylight.js": "./scene/daylight.js?v=20261103c",
+        "./scene/floorstyle.js": "./scene/floorstyle.js?v=20261103c",
+        "./scene/looks.js": "./scene/looks.js?v=20261103c",
+        "./scene/office.js": "./scene/office.js?v=20261103c",
+        "./scene/outlines.js": "./scene/outlines.js?v=20261103c",
+        "./scene/post.js": "./scene/post.js?v=20261103c",
+        "./scene/scene.js": "./scene/scene.js?v=20261103c",
+        "./scene/spring.js": "./scene/spring.js?v=20261103c",
+        "./scene/studio.js": "./scene/studio.js?v=20261103c",
+        "./scene/sunpatch.js": "./scene/sunpatch.js?v=20261103c",
+        "./scene/walls.js": "./scene/walls.js?v=20261103c",
+        "./share/share.js": "./share/share.js?v=20261103c",
+        "./ui/ui.js": "./ui/ui.js?v=20261103c",
+        "./wallpaper.js": "./wallpaper.js?v=20261103c"
       }
     }
   </script>
   <!-- the two big downloads start with the page, not after the scripts that ask for them (after the import map) -->
   <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js">
-  <link rel="preload" href="../assets/office/office.glb" as="fetch" crossorigin>
+  <link rel="preload" href="../assets/office/office.glb?v=20261103c" as="fetch" crossorigin>
 </head>
 <body>
   <main id="scene" aria-label="Office"><div class="hq-loading" role="status"><span class="hq-loading-label">Building the office</span><span class="hq-loading-track"><i></i></span></div></main>
@@ -45,7 +68,7 @@
   <nav id="floors" aria-label="Floors"></nav>
   <aside id="panel" aria-label="Bot card and floor team"></aside>
   <section id="feed" aria-label="Event feed"></section>
-  <script type="module" src="./app.js"></script>
+  <script type="module" src="./app.js?v=20261103c"></script>
 <div id="fm-daynight" role="group" aria-label="白天 / 夜晚" style="position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:50;display:flex;gap:4px;padding:4px;border-radius:999px;background:rgba(30,32,38,.82);backdrop-filter:blur(8px);font:600 12px Inter,system-ui,sans-serif">
 <button data-t="13:00">☀ 白天</button><button data-t="23:00">☾ 夜晚</button><button data-t="auto">⏱ 自动</button></div>
 <style>#fm-daynight button{border:0;border-radius:999px;padding:5px 11px;background:transparent;color:#ddd;cursor:pointer;font:inherit}#fm-daynight button[aria-pressed=true]{background:#fff;color:#111}</style>
