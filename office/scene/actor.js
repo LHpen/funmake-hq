@@ -367,8 +367,8 @@ export class Actor {
     if (!REDUCED) {
       const breathe = s === 'working' || s === 'background' ? 0 : Math.sin(t * 2.1 + this.phase);   // working bots sit still at the keyboard
       sy = 1 + 0.018 * breathe; sx = 1 - 0.012 * breathe;
-      if (s === 'working') rx = 0.06;
-      const mode = this.spot?.chat ? 'chat' : this.spot?.lounge ? 'tea' : s === 'working' ? 'type' : null;
+      if ((s === 'working' || s === 'background')) rx = 0.06;
+      const mode = this.spot?.chat ? 'chat' : this.spot?.lounge ? 'tea' : (s === 'working' || s === 'background') ? 'type' : null;
       this.tickProps(mode, dt, t);
       if (mode === 'type' && !this.anim) {                     // hammering the keyboard
         rx = 0.1;                                              // leaning in, body still; only the hands tap
