@@ -4,7 +4,8 @@ import * as THREE from 'three';
 import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { loadOfficeAssets, ROWS, ROW_SEATS } from './office.js';
+import { loadOfficeAssets, ROWS, ROW_SEATS, ROW_X } from './office.js';
+const ROW_END_X = ROW_X[ROW_X.length - 1] + 1.05;   // just past the lounge-side end of every row
 import { Building } from './building.js';
 import { createDaylight } from './daylight.js';
 import { createPost } from './post.js';
@@ -264,7 +265,7 @@ function zoneDesks(bots, inst) {
     l.element.textContent = `${t} · ${idxs.length}`;
     const ps = idxs.map((i) => assets.spots.desks[i]?.pos).filter(Boolean);
     // on the floor in the aisle on the camera side of the zone's table, under the bots rather than among the bubbles
-    if (rows) { l.position.set(Math.max(...ps.map((p) => p.x)) + 1.05, 0.02, ps[0].z + 0.72); continue; }   // on the floor at the camera-side end of its row, on the desk axis
+    if (rows) { l.position.set(ROW_END_X, 0.02, ps[0].z + 0.72); continue; }   // on the floor at the camera-side end of its row, on the desk axis
     const x = ps.reduce((a, p) => a + p.x, 0) / ps.length;
     const near = Math.max(...ps.map((p) => p.z + (p.yaw === 0 ? 2.1 : 0)));
     l.position.set(x, 0.02, near + 0.55);
