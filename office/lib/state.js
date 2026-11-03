@@ -1,6 +1,6 @@
 import { zhStep } from './zhstep.js';
 // Everyone works on one floor; the old per-group floors become desk zones (see teamOf / scene zones).
-export const SINGLE_FLOOR = '放码总部';
+export const SINGLE_FLOOR = '趣制造总部';
 const FLOOR_CN = { Ops: '运营', Sourcing: '选品', Dev: '开发', Stores: '店铺', News: '资讯' };
 // State reducer: journal records -> CONTRACT §4 state. Pure in-memory, clock injectable for tests. Runs in Node (the
 // server) and in the browser (the office reading a bots channel on ntfy.sh), so: no Node-only APIs here.
