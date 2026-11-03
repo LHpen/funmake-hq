@@ -160,7 +160,7 @@ export async function connectFeed({ topic, servers }, onState) {
     }
     if (isMap(rec.groups)) {                             // {"groups":{"Bot A":"Content"}}: the main bot's teams = floors
       for (const [name, team] of Object.entries(rec.groups).slice(0, 400)) {
-        if (typeof team === 'string' && team.trim()) (cfg[name] ||= {}).floor = team.trim().slice(0, 40);
+        if (typeof team === 'string' && team.trim()) (cfg[name] ||= {}).team = team.trim().slice(0, 40);   // one floor; the group is the bot's zone
       }
       store.setBotsConfig(cfg);
       return true;

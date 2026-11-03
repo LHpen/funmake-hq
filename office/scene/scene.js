@@ -1,7 +1,7 @@
 // Isometric 3D building (CONTRACT §6, v2): renderer, camera on springs, floor stack, actors, picking, post.
 // Public API (unchanged): initScene, renderScene, zoom, focusBot.
 import * as THREE from 'three';
-import { CSS2DRenderer } from 'three/addons/renderers/CSS2DRenderer.js';
+import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { loadOfficeAssets } from './office.js';
@@ -175,6 +175,7 @@ function sync() {
 
   const maxShare = Math.max(0.0001, ...floorBots.map((b) => b.usage_share || 0));
   const lounge = assignLounge(floorBots);
+  const deskOf = zoneDesks(floorBots, inst);
   const flags = new Array(20).fill(0);
   const delay = Math.max(0, switchedAt + 0.55 - nowSec);
   for (const bot of floorBots) {
@@ -184,7 +185,7 @@ function sync() {
       actors.set(bot.id, actor);
       attachModel(actor, bot);
     }
-    const deskIdx = (DESK_ORDER[(bot.desk || 1) - 1] || 1) - 1;
+    const deskIdx = deskOf.get(bot.id) ?? (DESK_ORDER[(bot.desk || 1) - 1] || 1) - 1;
     const desk = assets.spots.desks[deskIdx] || assets.spots.desks[0];
     if ((bot.effective_status || bot.status) === 'working' && !lounge.has(bot.id)) flags[deskIdx] = 1;
     actor.update(bot, lounge.get(bot.id) || desk, { maxShare, selectedBot: view.selectedBot });
@@ -220,6 +221,46 @@ function settle(seconds = 3) {
     for (const a of actors.values()) { a.hostAlpha = building.activeOpen()?.alpha ?? 1; a.tick(step, nowSec); }
     for (const a of retiring) { a.tick(step, nowSec); if (a.dead) retiring.delete(a); }
   }
+}
+
+// One open floor: bots sit in zones by team (their old floor). Teams fill the desks table by table, pair by pair, so a
+// team's desks are side by side; a small Chinese label sits on the table at the middle of each zone.
+const TEAM_ORDER = ['开发', '店铺', '运营', '选品', '资讯'];
+const zoneLabels = new Map();          // team -> CSS2DObject
+let zoneRoot = null;
+function zoneDesks(bots, inst) {
+  const rank = (t) => { const i = TEAM_ORDER.indexOf(t); return i < 0 ? TEAM_ORDER.length : i; };
+  const team = (b) => b.team || '其他';
+  const sorted = [...bots].sort((a, b) => rank(team(a)) - rank(team(b)) || team(a).localeCompare(team(b)) || (a.desk || 0) - (b.desk || 0));
+  const total = assets.spots.desks.length;
+  const out = new Map(), groups = new Map();
+  sorted.forEach((b, i) => {
+    const idx = i % total;
+    out.set(b.id, idx);
+    if (!groups.has(team(b))) groups.set(team(b), []);
+    groups.get(team(b)).push(idx);
+  });
+  if (zoneRoot !== inst.root) { for (const l of zoneLabels.values()) l.removeFromParent(); zoneLabels.clear(); zoneRoot = inst.root; }
+  const hasTeams = bots.some((b) => b.team);
+  for (const [t, l] of zoneLabels) if (!groups.has(t) || !hasTeams) { l.removeFromParent(); zoneLabels.delete(t); }
+  if (!hasTeams) return out;
+  for (const [t, idxs] of groups) {
+    let l = zoneLabels.get(t);
+    if (!l) {
+      const el = document.createElement('div');
+      el.className = 'hq-zone';
+      l = new CSS2DObject(el);
+      zoneLabels.set(t, l);
+      inst.root.add(l);
+    }
+    l.element.textContent = `${t} · ${idxs.length}`;
+    const ps = idxs.map((i) => assets.spots.desks[i]?.pos).filter(Boolean);
+    // on the floor in the aisle on the camera side of the zone's table, under the bots rather than among the bubbles
+    const x = ps.reduce((a, p) => a + p.x, 0) / ps.length;
+    const near = Math.max(...ps.map((p) => p.z + (p.yaw === 0 ? 2.1 : 0)));
+    l.position.set(x, 0.02, near + 0.55);
+  }
+  return out;
 }
 
 // Spots by status: working -> desk (typing); idle/done -> lounge seats (tea); everyone else that is not

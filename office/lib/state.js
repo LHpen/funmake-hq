@@ -1,4 +1,6 @@
 import { zhStep } from './zhstep.js';
+// Everyone works on one floor; the old per-group floors become desk zones (see teamOf / scene zones).
+export const SINGLE_FLOOR = '放码总部';
 const FLOOR_CN = { Ops: '运营', Sourcing: '选品', Dev: '开发', Stores: '店铺', News: '资讯' };
 // State reducer: journal records -> CONTRACT §4 state. Pure in-memory, clock injectable for tests. Runs in Node (the
 // server) and in the browser (the office reading a bots channel on ntfy.sh), so: no Node-only APIs here.
@@ -112,6 +114,7 @@ function normBotsCfg(obj) {
     if (!v || typeof v !== 'object') continue;
     const e = {};
     if (typeof v.floor === 'string' && v.floor.trim()) e.floor = v.floor.trim();
+    if (typeof v.team === 'string' && v.team.trim()) e.team = v.team.trim().slice(0, 40);
     if (typeof v.chat_url === 'string' && v.chat_url.trim() && !BAD_SCHEME.test(v.chat_url)) e.chat_url = v.chat_url.trim();
     if (typeof v.avatar === 'string' && /^[\w.-]{1,64}$/.test(v.avatar)) e.avatar = v.avatar;
     if (typeof v.color === 'string' && HEX.test(v.color.trim())) e.color = v.color.trim().toUpperCase();
@@ -446,6 +449,7 @@ export class StateStore {
   }
 
   baseFloorOf(bot) {
+    if (SINGLE_FLOOR) return this.resolveFloor(SINGLE_FLOOR);   // one open-plan floor: groups become zones (bot.team)
     const cfg = this.botsCfg.get(bot.id);
     const raw = cfg?.floor ?? this.floorsCfg.map.get(bot.id) ?? bot.group;
     return this.resolveFloor(raw);
@@ -554,6 +558,7 @@ export class StateStore {
         floor: bot.assign.floor,
         desk: bot.assign.desk,
         group: bot.group,
+        team: FLOOR_CN[cfg.team || bot.group] || cfg.team || bot.group || null,
         status: bot.status,
         effective_status: bot.eff,
         step: zhStep(bot.step),

@@ -812,3 +812,5 @@ html.bhq-phone body { overscroll-behavior: none; -webkit-tap-highlight-color: tr
 @media (prefers-reduced-transparency: reduce) {
   .bhq-phone .bhq-sheet { -webkit-backdrop-filter: none; backdrop-filter: none; background: #1A1A1E; }
 }
+/* one open floor: no floor switcher */
+#floors { display: none !important; }
