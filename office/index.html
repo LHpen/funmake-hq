@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>趣制造办公室 · Funmake Office</title>
+  <meta name="description" content="A live 3D office of your Grok Bot bots: who is working, who waits for you, what got done.">
+  <!-- the link preview (Telegram, X, iMessage): the dashboard itself -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="趣制造办公室 Funmake Office">
+  <meta property="og:title" content="趣制造办公室 Funmake Office">
+  <meta property="og:description" content="A live 3D office of your Grok Bot bots: who is working, who waits for you, what got done.">
+  <meta property="og:image" content="https://lhpen.github.io/funmake-hq/assets/brand/og-dashboard.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="趣制造办公室 Funmake Office">
+  <meta name="twitter:image" content="https://lhpen.github.io/funmake-hq/assets/brand/og-dashboard.png">
+  <link rel="icon" type="image/png" href="../assets/brand/logo-mark.png">
+  <link rel="apple-touch-icon" href="../assets/brand/logo-mark.png">
+  <meta name="theme-color" content="#F3F4F6">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400..700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./scene/scene.css">
+  <link rel="stylesheet" href="./ui/ui.css">
+  <link rel="stylesheet" href="./share/share.css">
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+      }
+    }
+  </script>
+  <!-- the two big downloads start with the page, not after the scripts that ask for them (after the import map) -->
+  <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js">
+  <link rel="preload" href="../assets/office/office.glb" as="fetch" crossorigin>
+</head>
+<body>
+  <main id="scene" aria-label="Office"><div class="hq-loading" role="status"><span class="hq-loading-label">Building the office</span><span class="hq-loading-track"><i></i></span></div></main>
+  <header id="topbar"></header>
+  <nav id="floors" aria-label="Floors"></nav>
+  <aside id="panel" aria-label="Bot card and floor team"></aside>
+  <section id="feed" aria-label="Event feed"></section>
+  <script type="module" src="./app.js"></script>
+<div id="fm-daynight" role="group" aria-label="白天 / 夜晚" style="position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:50;display:flex;gap:4px;padding:4px;border-radius:999px;background:rgba(30,32,38,.82);backdrop-filter:blur(8px);font:600 12px Inter,system-ui,sans-serif">
+<button data-t="13:00">☀ 白天</button><button data-t="23:00">☾ 夜晚</button><button data-t="auto">⏱ 自动</button></div>
+<style>#fm-daynight button{border:0;border-radius:999px;padding:5px 11px;background:transparent;color:#ddd;cursor:pointer;font:inherit}#fm-daynight button[aria-pressed=true]{background:#fff;color:#111}</style>
+<script>(function(){var k="fm.time",bar=document.getElementById("fm-daynight");
+function set(v){try{localStorage.setItem(k,v)}catch(e){}bar.querySelectorAll("button").forEach(function(b){b.setAttribute("aria-pressed",b.dataset.t===v?"true":"false")});
+var d=window.bothq&&bothq.scene&&bothq.scene.daylight;if(d&&d.setTime){d.setTime(v==="auto"?null:v);return true}return false}
+var cur="auto";try{cur=localStorage.getItem(k)||"auto"}catch(e){}
+bar.addEventListener("click",function(e){var b=e.target.closest("button");if(b){cur=b.dataset.t;set(cur)}});
+set(cur);var n=0,iv=setInterval(function(){if(set(cur)||++n>120)clearInterval(iv)},500);})();</script>
+</body>
+</html>
