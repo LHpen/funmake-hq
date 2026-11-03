@@ -18,10 +18,10 @@ export const LIMITS = {
   MAX_BOTS: 400,
 };
 
-const STATUSES = ['working', 'idle', 'waiting_user', 'error', 'stuck', 'done'];
+const STATUSES = ['working', 'background', 'idle', 'waiting_user', 'error', 'stuck', 'done'];
 
 const STATUS_MAP = {
-  working: 'working', idle: 'idle', waiting_user: 'waiting_user', error: 'error', done: 'done',
+  working: 'working', background: 'background', bg: 'background', background_running: 'background', idle: 'idle', waiting_user: 'waiting_user', error: 'error', done: 'done',
   waiting: 'waiting_user', waiting_for_user: 'waiting_user', awaiting_user: 'waiting_user', waiting_input: 'waiting_user',
   failed: 'error', fail: 'error', failure: 'error', errored: 'error',
   finished: 'done', complete: 'done', completed: 'done', success: 'done', succeeded: 'done',

@@ -39,6 +39,7 @@ const LS_DOCK = 'bothq.dock';
 
 const LABEL = {
   working: '工作中',
+  background: '后台运行中',
   idle: '休息中',
   waiting_user: '等你处理',
   error: '出错',
@@ -47,6 +48,7 @@ const LABEL = {
 };
 const CHIP = {
   working: '工作中',
+  background: '后台运行中',
   idle: '休息中',
   waiting_user: '等你处理',
   error: '出错',
@@ -57,6 +59,7 @@ const CHIP = {
 // Short counter words [one, many] per status.
 const WORDS = {
   working: ['工作中', '工作中'],
+  background: ['后台', '后台'],
   waiting_user: ['等待', '等待'],
   error: ['出错', '出错'],
   stuck: ['卡住', '卡住'],
@@ -67,6 +70,7 @@ const WORDS = {
 // Counters pill. "attention" folds stuck into waiting_user: both need a human.
 const SUMMARY = [
   { key: 'working', s: 'working', lead: true, n: (c) => c.working },
+  { key: 'background', s: 'background', n: (c) => c.background || 0, hideZero: true },
   { key: 'attention', s: 'waiting_user', alert: true, n: (c) => c.waiting_user + c.stuck },
   { key: 'error', s: 'error', alert: true, n: (c) => c.error },
   { key: 'idle', s: 'idle', n: (c) => c.idle },
@@ -344,7 +348,7 @@ function updateFade(el) {
 function updateFades() { for (const el of U.fades) updateFade(el); }
 
 function counts(state) {
-  const out = { working: 0, idle: 0, waiting_user: 0, error: 0, stuck: 0, done: 0 };
+  const out = { working: 0, background: 0, idle: 0, waiting_user: 0, error: 0, stuck: 0, done: 0 };
   const bots = state.bots;
   if (bots && typeof bots === 'object' && Object.keys(bots).length) {
     for (const id of Object.keys(bots)) {
@@ -1166,7 +1170,7 @@ function renderTopbar(state) {
 
 function countsText(c) {
   const parts = [];
-  for (const s of ['working', 'waiting_user', 'error', 'stuck', 'done', 'idle']) {
+  for (const s of ['working', 'background', 'waiting_user', 'error', 'stuck', 'done', 'idle']) {
     const n = Number(c && c[s]) || 0;
     if (n > 0) parts.push(n + ' ' + statusWord(s, n));
   }

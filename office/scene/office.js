@@ -21,7 +21,7 @@ export async function loadOfficeAssets(baseUrl) {
   try {
     if (new URLSearchParams(location.search).get('placeholder') === '1') throw new Error('?placeholder=1');   // test switch
     const gltf = await Promise.race([
-      new GLTFLoader().loadAsync(`${baseUrl}/office.glb?v=20261103c`),
+      new GLTFLoader().loadAsync(`${baseUrl}/office.glb?v=20261103d`),
       new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 25000)),
     ]);
     gltf.scene.updateMatrixWorld(true);

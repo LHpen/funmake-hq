@@ -200,7 +200,7 @@ function simulate() {
 }
 
 function recount() {
-  const zero = () => ({ working: 0, idle: 0, waiting_user: 0, error: 0, stuck: 0, done: 0 });
+  const zero = () => ({ working: 0, background: 0, idle: 0, waiting_user: 0, error: 0, stuck: 0, done: 0 });
   state.summary = { ...zero(), total: 0 };
   for (const f of state.floors) f.counts = zero();
   for (const b of Object.values(state.bots)) {

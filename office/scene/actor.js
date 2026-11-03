@@ -6,9 +6,9 @@ import { CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 import { Spring, REDUCED, clamp, smoothstep } from './spring.js';
 
 export const STATUS_COLOR = {
-  working: '#34C759', idle: '#A1A1A6', waiting_user: '#FF9F0A', error: '#FF3B30', stuck: '#FF9500', done: '#0A84FF',
+  working: '#34C759', background: '#5AC8FA', idle: '#A1A1A6', waiting_user: '#FF9F0A', error: '#FF3B30', stuck: '#FF9500', done: '#0A84FF',
 };
-const STATUS_LABEL = { waiting_user: '等你处理', error: '出错', stuck: '卡住了？', done: '完成', working: '工作中', idle: '休息中' };
+const STATUS_LABEL = { waiting_user: '等你处理', error: '出错', stuck: '卡住了？', done: '完成', working: '工作中', background: '后台运行中', idle: '休息中' };
 const CAMERA_YAW = Math.PI / 4;     // isometric camera sits on +X +Z
 const RESTING_TURN = 0.42;          // blobs lean toward the camera a bit
 const MODEL_HEIGHT = 1.0;
@@ -188,7 +188,7 @@ export class Actor {
     const s = this.status, bot = this.bot;
     if (!bot) return;
     const attn = s === 'waiting_user' || s === 'error' || s === 'stuck';
-    const work = s === 'working' && !!bot.step;          // working: its current step stays above its head
+    const work = (s === 'working' || s === 'background') && !!bot.step;   // background: step stays up too          // working: its current step stays above its head
     const mode = this.selected ? 'sel' : attn ? 'attn' : work ? 'work' : this.hovered ? 'hover' : 'off';
     let text = bot.name || '';
     if (mode === 'work') {
@@ -365,7 +365,7 @@ export class Actor {
     let y = 0, sx = 1, sy = 1, rx = 0, rz = 0, ox = 0;
 
     if (!REDUCED) {
-      const breathe = s === 'working' ? 0 : Math.sin(t * 2.1 + this.phase);   // working bots sit still at the keyboard
+      const breathe = s === 'working' || s === 'background' ? 0 : Math.sin(t * 2.1 + this.phase);   // working bots sit still at the keyboard
       sy = 1 + 0.018 * breathe; sx = 1 - 0.012 * breathe;
       if (s === 'working') rx = 0.06;
       const mode = this.spot?.chat ? 'chat' : this.spot?.lounge ? 'tea' : s === 'working' ? 'type' : null;
@@ -453,6 +453,7 @@ export class Actor {
 
     // status ring: quiet unless it matters
     const pulse = s === 'working' ? 0.14 + 0.05 * Math.sin(t * 3 + this.phase)
+      : s === 'background' ? 0.16
       : s === 'waiting_user' || s === 'error' ? 0.4 + 0.25 * (0.5 + 0.5 * Math.sin(t * 5))
       : s === 'stuck' ? 0.3 + 0.15 * Math.sin(t * 2) : 0;
     const wantRing = this.selected ? 0.8 : this.hovered ? Math.max(0.4, pulse) : pulse;

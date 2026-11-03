@@ -52,6 +52,7 @@
 /* status hook: any element with data-s gets --s, the colour of its status (a dot, an orb, a tint) */
 :where(#topbar, #floors, #panel, #feed, .bhq-dock, .bhq-sheet) [data-s="working"] { --s: #34C759; }
 :where(#topbar, #floors, #panel, #feed, .bhq-dock, .bhq-sheet) [data-s="idle"] { --s: #8E8E93; }
+:where(#topbar, #floors, #panel, #feed, .bhq-dock, .bhq-sheet) [data-s="background"] { --s: #5AC8FA; }
 :where(#topbar, #floors, #panel, #feed, .bhq-dock, .bhq-sheet) [data-s="waiting_user"] { --s: #FFB020; }
 :where(#topbar, #floors, #panel, #feed, .bhq-dock, .bhq-sheet) [data-s="error"] { --s: #FF453A; }
 :where(#topbar, #floors, #panel, #feed, .bhq-dock, .bhq-sheet) [data-s="stuck"] { --s: #FF9F0A; }
@@ -73,6 +74,7 @@
   transition: background-color .8s ease;
   animation: bhq-in .7s var(--bhq-spring) backwards;
 }
+.bhq-surface[data-s="background"] { --base: #123A4D; --glow: #5AC8FA; --hi: #CFF0FF; --mid: #9ADCF7; --dim: #7CC0DE; --g1: .35; --g2: .15; }
 .bhq-surface[data-s="working"] { --base: #2F4A17; --glow: #9BDC3C; --hi: #E7FF8C; --mid: #C2E784; --dim: #A5C96E; --g1: .5; --g2: .22; }
 .bhq-surface[data-s="waiting_user"], .bhq-surface[data-s="stuck"] { --base: #6E3F06; --glow: #FFB23A; --hi: #FFE2A6; --mid: #FFD28E; --dim: #E8B968; --g1: .5; --g2: .22; }
 .bhq-surface[data-s="error"] { --base: #8C1620; --glow: #FF4A5E; --hi: #FFE1E4; --mid: #FFB8BF; --dim: #F0959F; --g1: .5; --g2: .22; }

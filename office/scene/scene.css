@@ -54,6 +54,8 @@
 .hqt[data-mode="work"] .hqt-pill, .hqt[data-mode="attn"] .hqt-pill { font-size: 10px; max-width: 120px; white-space: nowrap; opacity: .92; }
 .hqt[data-mode="work"] .hqt-stem { height: 8px; }
 .hqt[data-mode="hover"], .hqt[data-mode="sel"] { z-index: 10 !important; }
+.hqt[data-status="background"] .hqt-pill { background: rgba(225, 244, 252, .9); }
+.hqt[data-status="background"] .hqt-text::before { content: "⏳ "; }
 .hqt-dot { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--c, #A1A1A6); }
 .hqt-stem { width: 1px; height: 14px; background: rgba(0, 0, 0, .18); }
 
