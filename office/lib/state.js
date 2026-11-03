@@ -1,3 +1,4 @@
+const FLOOR_CN = { Ops: '运营', Sourcing: '选品', Dev: '开发', Stores: '店铺', News: '资讯' };
 // State reducer: journal records -> CONTRACT §4 state. Pure in-memory, clock injectable for tests. Runs in Node (the
 // server) and in the browser (the office reading a bots channel on ntfy.sh), so: no Node-only APIs here.
 import { slugify, hashColor, cleanStr, makeTime, parseTime } from './util.js';
@@ -515,7 +516,7 @@ export class StateStore {
       const occ = this.members.get(f.id);
       const counts = zero();
       const ids = [...occ.entries()].sort((a, b) => a[0] - b[0]).map(([, id]) => id);
-      floors.push({ id: f.id, name: f.name, order: i + 1, bots: ids, counts, free_desks: LIMITS.MAX_PER_FLOOR - occ.size });
+      floors.push({ id: f.id, name: FLOOR_CN[f.name] || f.name, order: i + 1, bots: ids, counts, free_desks: LIMITS.MAX_PER_FLOOR - occ.size });
     });
     const floorById = new Map(floors.map((f) => [f.id, f]));
 

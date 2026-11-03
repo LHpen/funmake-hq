@@ -16,7 +16,7 @@ const W = 1600, H = 900;
 const SUPERSAMPLE = 1.5;                               // desktop only: phones render at 1x (GPU memory)
 const MARK_SRC = new URL('../../assets/brand/logo-mark.png', import.meta.url).href;
 const FILE_NAME = 'grok-bot-office.png';
-const POST_TEXT = 'My Grok Bot office';
+const POST_TEXT = '我的趣制造办公室';
 const INK = '#16171A', GREY = '#7A7B82', WORKING = '#34C759';
 const BRAND_FONT = '"Nunito", ui-rounded, system-ui, sans-serif';
 const TEXT_FONT = '"Inter", system-ui, -apple-system, "Segoe UI", sans-serif';
@@ -63,7 +63,7 @@ function caption(g, mark, parts) {
   g.fillStyle = INK;
   g.font = `900 34px ${BRAND_FONT}`;
   track(g, -0.3);
-  g.fillText('Grok Bot Dashboard', mark ? m + s + 18 : m, cy + capHalf(g));
+  g.fillText('趣制造办公室', mark ? m + s + 18 : m, cy + capHalf(g));
 
   // "18 bots · 4 teams · ● 6 working now": the numbers in ink, the words in grey, right-aligned
   track(g, 0);
@@ -98,7 +98,7 @@ function stats(state) {
   const working = bots.filter((b) => (b.effective_status || b.status) === 'working').length;
   const parts = [{ n: bots.length, word: bots.length === 1 ? 'bot' : 'bots' }];
   if (teams > 1) parts.push({ n: teams, word: 'teams' });
-  if (working) parts.push({ n: working, word: 'working now', dot: true });
+  if (working) parts.push({ n: working, word: '正在工作', dot: true });
   return parts;
 }
 
@@ -135,7 +135,7 @@ function fonts() {
   if (!document.fonts?.load) return Promise.resolve();
   const want = [`900 34px ${BRAND_FONT}`, `500 26px ${TEXT_FONT}`, `650 26px ${TEXT_FONT}`];
   return Promise.race([
-    Promise.all(want.map((f) => document.fonts.load(f, 'Grok Bot Dashboard 0123456789 teams working now'))),
+    Promise.all(want.map((f) => document.fonts.load(f, '趣制造办公室 0123456789 正在工作'))),
     new Promise((r) => setTimeout(r, 2000)),
   ]).catch(() => {});
 }
@@ -158,20 +158,20 @@ const coarse = () => matchMedia('(pointer: coarse)').matches;
 const canCopy = () => !!(navigator.clipboard?.write && window.ClipboardItem);
 
 function build() {
-  const close_ = h('button', { class: 'bhq-shr-x', type: 'button', 'aria-label': 'Close', title: 'Close (Esc)' });
+  const close_ = h('button', { class: 'bhq-shr-x', type: 'button', 'aria-label': '关闭', title: '关闭 (Esc)' });
   close_.innerHTML = '<svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>';
-  const img = h('img', { alt: 'Your office, ready to post', draggable: 'false' });
-  const wait = h('span', { class: 'bhq-shr-wait', text: 'Framing your office…' });
+  const img = h('img', { alt: '办公室截图，可直接发布', draggable: 'false' });
+  const wait = h('span', { class: 'bhq-shr-wait', text: '正在生成办公室截图…' });
   const pic = h('div', { class: 'bhq-shr-img' }, img, wait);
   const btn = (label, cls = '') => h('button', { class: `bhq-shr-btn ${cls}`.trim(), type: 'button', text: label, disabled: true });
-  const share = btn('Share…', 'bhq-shr-btn--main');
-  const copy = btn('Copy image');
-  const save = btn('Download');
-  const post = btn('Post on X', 'bhq-shr-btn--main');
+  const share = btn('分享…', 'bhq-shr-btn--main');
+  const copy = btn('复制图片');
+  const save = btn('下载');
+  const post = btn('发到 X', 'bhq-shr-btn--main');
   const acts = h('div', { class: 'bhq-shr-acts' });
   const note = h('p', { class: 'bhq-shr-note', role: 'status', 'aria-live': 'polite' });
-  const root = h('div', { class: 'bhq-shr bhq-surface', role: 'dialog', 'aria-label': 'Share your office', tabindex: '-1', hidden: true },
-    h('div', { class: 'bhq-shr-head' }, h('b', { class: 'bhq-shr-title', text: 'Share your office' }), close_),
+  const root = h('div', { class: 'bhq-shr bhq-surface', role: 'dialog', 'aria-label': '分享办公室', tabindex: '-1', hidden: true },
+    h('div', { class: 'bhq-shr-head' }, h('b', { class: 'bhq-shr-title', text: '分享办公室' }), close_),
     pic, acts, note);
   document.body.append(root);
   C = { root, img, pic, wait, acts, note, share, copy, save, post, blob: null, url: null, file: null, anchor: null, state: null };
@@ -203,7 +203,7 @@ function open() {
   for (const b of [C.share, C.copy, C.save, C.post]) b.disabled = true;
   C.pic.classList.remove('is-ready');
   C.wait.hidden = false;
-  C.wait.textContent = 'Framing your office…';
+  C.wait.textContent = '正在生成办公室截图…';
   root.hidden = false;
   place();
   C.anchor?.setAttribute('aria-expanded', 'true');
@@ -217,7 +217,7 @@ function open() {
     let blob = null;
     try { blob = await makeShareImage(C.state); } catch (err) { console.warn('[share]', err); }
     if (id !== job) return;
-    if (!blob) { C.wait.textContent = 'The office is still loading. Try again in a moment.'; return; }
+    if (!blob) { C.wait.textContent = '办公室还在加载，请稍后再试。'; return; }
     if (C.url) URL.revokeObjectURL(C.url);
     C.blob = blob;
     C.url = URL.createObjectURL(blob);
@@ -262,7 +262,7 @@ async function copyBlob() {
 
 async function onCopy() {
   const ok = await copyBlob();
-  setNote(ok ? 'Copied. Paste it anywhere.' : 'Copying is blocked here. Use Download instead.');
+  setNote(ok ? '已复制，可以粘贴到任何地方。' : '这里无法复制，请用下载。');
   if (ok) sfx.tick();
 }
 
@@ -280,7 +280,7 @@ async function onPost() {
   // no link: the site's front page is not the dashboard's, and the page's own address carries the user's topic
   const q = new URLSearchParams({ text: POST_TEXT });
   window.open(`https://x.com/intent/post?${q}`, '_blank', 'noopener');
-  setNote(ok ? `Image copied. In the post, paste it with ${MAC ? '⌘V' : 'Ctrl V'}.` : 'Download the image, then add it to your post.');
+  setNote(ok ? `Image copied. In the post, paste it with ${MAC ? '⌘V' : 'Ctrl V'}.` : '下载图片后再添加到帖子里。');
 }
 
 async function onShare() {
@@ -288,6 +288,6 @@ async function onShare() {
   try {
     await navigator.share({ files: [C.file], text: POST_TEXT });
   } catch (err) {
-    if (err?.name !== 'AbortError') setNote('Sharing did not work here. Use Download instead.');
+    if (err?.name !== 'AbortError') setNote('这里无法分享，请用下载。');
   }
 }

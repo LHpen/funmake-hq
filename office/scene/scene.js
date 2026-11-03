@@ -512,7 +512,7 @@ export function captureScene({ width = 1600, height = 900, scale = 1, box = { x:
   const walls = inst.walls, live = walls?.data;
   try {
     if (live) {
-      const anon = { ...live, floorName: `Floor ${building.activeIndex + 1}`, bots: live.bots.map((b) => ({ ...b, name: '', task: '', step: '' })) };
+      const anon = { ...live, floorName: `${building.activeIndex + 1} 楼`, bots: live.bots.map((b) => ({ ...b, name: '', task: '', step: '' })) };
       if (walls.screen) walls.drawScreen(anon);
       if (walls.board) walls.drawBoard(anon);
     }
