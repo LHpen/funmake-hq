@@ -265,24 +265,29 @@ function zoneDesks(bots, inst) {
 
 // Spots by status: working -> desk (typing); idle/done -> lounge seats (tea); everyone else that is not
 // working (waiting_user, stuck, unknown, lounge overflow) -> a chat circle next to the lounge. error stays at the desk.
-const CHAT_RING = 6;
-let chatCache = null;
-function chatSpots() {
-  if (chatCache) return chatCache;
-  // hand-picked: open floor in front of the lounge corner (x 3..8, z 0..4.7 in floorstyle.js), toward the camera side,
-  // so the TV, shelves, plants and the lift never hide a chatting bot. Extra circles step along the front aisle.
-  const CENTERS = [[1.55, 4.55], [-0.15, 4.55], [-1.85, 4.55]];
-  const y = 0;
+// Chatters stand in small circles of 2-3 spread over open floor: a row along the front aisle (in front of the zone
+// labels, clear of the tables) and two by the right wall between the lounge and the kitchen counter. Never by the TV
+// (back-left wall) or behind the tables. Circles fill in this order; more than 21 chatters wrap round again.
+const CHAT_CENTERS = [[-3.6, 4.6], [1.4, 4.6], [-6.1, 4.6], [-1.1, 4.6], [4.7, -2.3], [6.9, -2.3], [5.8, -0.9]];
+function chatGroups(n) {
   const out = [];
-  for (let ring = 0; ring < CENTERS.length; ring++) {
-    const c = new THREE.Vector3(CENTERS[ring][0], y, CENTERS[ring][1]);
-    for (let i = 0; i < CHAT_RING; i++) {
-      const a = (i / CHAT_RING) * Math.PI * 2 + ring * 0.5;
-      const pos = new THREE.Vector3(c.x + Math.sin(a) * 0.78, y, c.z + Math.cos(a) * 0.78);
-      out.push({ pos, yaw: Math.atan2(c.x - pos.x, c.z - pos.z) - 0.42, chat: true, slot: i });
+  if (!n) return out;
+  const g = Math.min(CHAT_CENTERS.length, Math.max(1, Math.ceil(n / 3)));
+  const sizes = new Array(g).fill(0);
+  for (let i = 0; i < n; i++) sizes[i % g]++;
+  const spots = sizes.map(() => []);
+  sizes.forEach((k, gi) => {
+    const [cx, cz] = CHAT_CENTERS[gi];
+    const r = k <= 1 ? 0 : 0.72;
+    for (let i = 0; i < k; i++) {
+      const a = (i / k) * Math.PI * 2 + 0.6 + gi * 0.9;
+      const pos = new THREE.Vector3(cx + Math.sin(a) * r, 0, cz + Math.cos(a) * r);
+      spots[gi].push({ pos, yaw: k <= 1 ? 0 : Math.atan2(cx - pos.x, cz - pos.z), chat: true, slot: i });
     }
-  }
-  return (chatCache = out);
+  });
+  // talker i joins circle i % g, so waiting bots (listed last) spread over the circles instead of filling one
+  for (let i = 0; i < n; i++) out.push(spots[i % g][Math.floor(i / g)]);
+  return out;
 }
 function assignLounge(bots) {
   const map = new Map();
@@ -292,8 +297,8 @@ function assignLounge(bots) {
   const rest = bots.filter((b) => st(b) === 'idle' || st(b) === 'done').sort(byDesk);
   rest.slice(0, seats.length).forEach((b, i) => map.set(b.id, seats[i]));
   const talkers = rest.slice(seats.length).concat(bots.filter((b) => !['idle', 'done', 'working', 'error'].includes(st(b))).sort(byDesk));
-  const chats = chatSpots();
-  talkers.slice(0, chats.length).forEach((b, i) => map.set(b.id, chats[i]));
+  const chats = chatGroups(talkers.length);
+  talkers.forEach((b, i) => map.set(b.id, chats[i]));
   return map;
 }
 
