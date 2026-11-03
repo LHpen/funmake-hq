@@ -264,11 +264,12 @@ function zoneDesks(bots, inst) {
     l.element.textContent = `${t} · ${idxs.length}`;
     const ps = idxs.map((i) => assets.spots.desks[i]?.pos).filter(Boolean);
     // on the floor in the aisle on the camera side of the zone's table, under the bots rather than among the bubbles
-    if (rows) { const z = ps[0].z; l.position.set(Math.min(...ps.map((p) => p.x)) - 1.15, 0.02, z + 0.5); continue; }   // at the start of its row
+    if (rows) { l.position.set(Math.max(...ps.map((p) => p.x)) + 1.05, 0.02, ps[0].z + 0.72); continue; }   // on the floor at the camera-side end of its row, on the desk axis
     const x = ps.reduce((a, p) => a + p.x, 0) / ps.length;
     const near = Math.max(...ps.map((p) => p.z + (p.yaw === 0 ? 2.1 : 0)));
     l.position.set(x, 0.02, near + 0.55);
   }
+  if (rows) window.bothq = Object.assign(window.bothq || {}, { rows: Object.fromEntries([...groups].map(([t, ix]) => [t, sorted.filter((b) => groups.get(t).includes(out.get(b.id))).map((b) => [b.name || b.id, b.team, Math.floor(out.get(b.id) / ROW_SEATS)])])) });   // for tests
   return out;
 }
 
@@ -729,7 +730,7 @@ function unstackTags() {
     if (r.width) pills.push({ pill, x: Math.round(r.left), w: r.width, h: r.height, y: Math.round(r.top + lift) });   // y without the old lift
   }
   pills.sort((p, q) => q.y - p.y);                       // nearest (lowest on screen) keeps its place
-  const placed = [];
+  const placed = [...zoneLabels.values()].filter((l) => l.visible && l.element.isConnected).map((l) => { const r = l.element.getBoundingClientRect(); return { x: Math.round(r.left), w: r.width, y: Math.round(r.top), h: r.height }; }).filter((r) => r.w);   // row labels are fixed obstacles
   for (const p of pills) {
     let y = p.y;
     for (let moved = true, n = 0; moved && n < 8; n++) {
