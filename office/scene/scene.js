@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { loadOfficeAssets } from './office.js';
+import { loadOfficeAssets, ROWS, ROW_SEATS } from './office.js';
 import { Building } from './building.js';
 import { createDaylight } from './daylight.js';
 import { createPost } from './post.js';
@@ -175,7 +175,7 @@ function sync() {
 
   const maxShare = Math.max(0.0001, ...floorBots.map((b) => b.usage_share || 0));
   const deskOf = zoneDesks(floorBots, inst);
-  const flags = new Array(20).fill(0);
+  const flags = new Array(assets.spots.desks.length).fill(0);
   const delay = Math.max(0, switchedAt + 0.55 - nowSec);
   for (const bot of floorBots) {
     let actor = actors.get(bot.id);
@@ -236,12 +236,18 @@ function zoneDesks(bots, inst) {
   const sorted = [...bots].sort((a, b) => rank(team(a)) - rank(team(b)) || team(a).localeCompare(team(b)) || (a.desk || 0) - (b.desk || 0));
   const total = assets.spots.desks.length;
   const out = new Map(), groups = new Map();
+  const rows = total === ROWS * ROW_SEATS;
+  // row layout: department k takes row k (front row = first team, nearest the camera); overflow takes free seats
+  const teams = [...new Set(sorted.map(team))];
+  const used = new Set(), place = (b, idx) => { used.add(idx); out.set(b.id, idx); if (!groups.has(team(b))) groups.set(team(b), []); groups.get(team(b)).push(idx); };
+  const spill = [];
   sorted.forEach((b, i) => {
-    const idx = i % total;
-    out.set(b.id, idx);
-    if (!groups.has(team(b))) groups.set(team(b), []);
-    groups.get(team(b)).push(idx);
+    if (!rows) return place(b, i % total);
+    const r = ROWS - 1 - teams.indexOf(team(b));
+    const n = r >= 0 ? (groups.get(team(b))?.length || 0) : ROW_SEATS;
+    if (n < ROW_SEATS) place(b, r * ROW_SEATS + n); else spill.push(b);
   });
+  for (const b of spill) { let k = 0; while (used.has(k) && k < total) k++; place(b, k % total); }
   if (zoneRoot !== inst.root) { for (const l of zoneLabels.values()) l.removeFromParent(); zoneLabels.clear(); zoneRoot = inst.root; }
   const hasTeams = bots.some((b) => b.team);
   for (const [t, l] of zoneLabels) if (!groups.has(t) || !hasTeams) { l.removeFromParent(); zoneLabels.delete(t); }
@@ -258,6 +264,7 @@ function zoneDesks(bots, inst) {
     l.element.textContent = `${t} · ${idxs.length}`;
     const ps = idxs.map((i) => assets.spots.desks[i]?.pos).filter(Boolean);
     // on the floor in the aisle on the camera side of the zone's table, under the bots rather than among the bubbles
+    if (rows) { const z = ps[0].z; l.position.set(Math.min(...ps.map((p) => p.x)) - 1.15, 0.02, z + 0.5); continue; }   // at the start of its row
     const x = ps.reduce((a, p) => a + p.x, 0) / ps.length;
     const near = Math.max(...ps.map((p) => p.z + (p.yaw === 0 ? 2.1 : 0)));
     l.position.set(x, 0.02, near + 0.55);
@@ -719,7 +726,7 @@ function unstackTags() {
     if (!a.tag.visible || a.tagEl.dataset.mode === 'off') { pill.style.translate = ''; continue; }
     const lift = parseFloat(pill.dataset.lift || '0');
     const r = pill.getBoundingClientRect();
-    if (r.width) pills.push({ pill, x: r.left, w: r.width, h: r.height, y: r.top + lift });   // y without the old lift
+    if (r.width) pills.push({ pill, x: Math.round(r.left), w: r.width, h: r.height, y: Math.round(r.top + lift) });   // y without the old lift
   }
   pills.sort((p, q) => q.y - p.y);                       // nearest (lowest on screen) keeps its place
   const placed = [];
@@ -729,9 +736,14 @@ function unstackTags() {
       moved = false;
       for (const o of placed) if (p.x < o.x + o.w + 4 && o.x < p.x + p.w + 4 && y < o.y + o.h + 3 && o.y < y + p.h + 3) { y = o.y - p.h - 3; moved = true; }
     }
-    const lift = p.y - y;
-    p.pill.dataset.lift = String(lift);
-    p.pill.style.translate = lift ? `0 ${-lift}px` : '';
+    let lift = Math.round(p.y - y);
+    const old = parseFloat(p.pill.dataset.lift || '0');
+    if (Math.abs(lift - old) < 3) lift = old;              // hysteresis: ignore tiny changes so it never flickers
+    y = p.y - lift;
+    if (lift !== old || p.pill.style.translate !== (lift ? `0 ${-lift}px` : '')) {
+      p.pill.dataset.lift = String(lift);
+      p.pill.style.translate = lift ? `0 ${-lift}px` : '';
+    }
     placed.push({ ...p, y });
   }
 }

@@ -25,6 +25,7 @@ const rippleTexture = makeRadialTexture([[0, 'rgba(255,255,255,0)'], [0.6, 'rgba
   [0.9, 'rgba(255,255,255,0.3)'], [1, 'rgba(255,255,255,0)']]);
 const RIPPLE_GEO = new THREE.PlaneGeometry(2, 2);
 const CELEBRATE_S = 0.95;
+const HAND_GEO = new THREE.SphereGeometry(0.06, 12, 8);
 const KEY_GEO = new THREE.BoxGeometry(0.075, 0.075, 0.02);
 const CUP_GEO = new THREE.CylinderGeometry(0.05, 0.04, 0.1, 14);
 const TEA_GEO = new THREE.CircleGeometry(0.045, 14).rotateX(-Math.PI / 2);
@@ -96,7 +97,7 @@ export class Actor {
     this.tag.center.set(0.5, 0);
     this.tag.position.y = MODEL_HEIGHT + 0.24;
     this.tag.visible = false;
-    this.pivot.add(this.tag);
+    this.root.add(this.tag);                                       // anchored to the seat, not the bobbing/typing pivot, so it never jitters
 
     this.setPlaceholderModel(bot.color);
     ctx.parent.add(this.root);
@@ -294,6 +295,10 @@ export class Actor {
       const k = new THREE.Mesh(KEY_GEO, new THREE.MeshBasicMaterial({ color: 0x5ac8fa, transparent: true, depthWrite: false }));
       k.userData.t = i * 0.12; P.type.add(k); P.keys.push(k);
     }
+    P.hands = [-1, 1].map((side) => {                              // two little paws resting on the keyboard
+      const h = new THREE.Mesh(HAND_GEO, this.handMat || (this.handMat = new THREE.MeshStandardMaterial({ color: 0xf2f2f4, roughness: 0.6 })));
+      h.userData.side = side; P.type.add(h); return h;
+    });
     const cup = new THREE.Group();
     const body = new THREE.Mesh(CUP_GEO, CUP_MAT); body.position.y = 0.05;
     const tea = new THREE.Mesh(TEA_GEO, TEA_MAT); tea.position.y = 0.098;
@@ -327,6 +332,10 @@ export class Actor {
         k.material.opacity = 0.9 * (1 - q);
         k.scale.setScalar(1 - 0.5 * q);
       }
+      for (const h of P.hands) {                                 // alternate quick taps, a few mm each
+        const tap = Math.max(0, Math.sin(t * 14 + this.phase + (h.userData.side > 0 ? Math.PI : 0)));
+        h.position.set(0.16 * h.userData.side, 0.36 + 0.035 * tap, 0.4);
+      }
     } else if (mode === 'tea') {
       const c = (t * 0.22 + this.phase) % 1;                    // one sip every ~4.5 s
       const up = c < 0.12 ? c / 0.12 : c < 0.32 ? 1 : c < 0.44 ? 1 - (c - 0.32) / 0.12 : 0;
@@ -356,14 +365,13 @@ export class Actor {
     let y = 0, sx = 1, sy = 1, rx = 0, rz = 0, ox = 0;
 
     if (!REDUCED) {
-      const breathe = Math.sin(t * 2.1 + this.phase);
+      const breathe = s === 'working' ? 0 : Math.sin(t * 2.1 + this.phase);   // working bots sit still at the keyboard
       sy = 1 + 0.018 * breathe; sx = 1 - 0.012 * breathe;
-      if (s === 'working') { y = 0.012 * Math.abs(Math.sin(t * 9 + this.phase)); rx = 0.06; }
+      if (s === 'working') rx = 0.06;
       const mode = this.spot?.chat ? 'chat' : this.spot?.lounge ? 'tea' : s === 'working' ? 'type' : null;
       this.tickProps(mode, dt, t);
       if (mode === 'type' && !this.anim) {                     // hammering the keyboard
-        y = 0.035 * Math.abs(Math.sin(t * 21 + this.phase)); rx = 0.13 + 0.03 * Math.sin(t * 17);
-        rz = 0.035 * Math.sin(t * 29 + this.phase); sy *= 1 - 0.03 * Math.abs(Math.sin(t * 21 + this.phase));
+        rx = 0.1;                                              // leaning in, body still; only the hands tap
       } else if (mode === 'tea') rx = -0.14 * this.sip;
       else if (mode === 'chat' && !this.anim) {
         this.nextAction -= dt;

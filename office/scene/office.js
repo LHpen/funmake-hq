@@ -6,6 +6,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { buildFloorStyles } from './floorstyle.js';
 
 export const DESK_COUNT = 20;
+export const ROWS = 5, ROW_SEATS = 6;               // one department per long desk row
 export const LOUNGE_COUNT = 6;
 export const SLAB = 0.36;
 export const FLOOR_STEP = 1.6;
@@ -56,6 +57,8 @@ export async function loadOfficeAssets(baseUrl) {
 // Per-floor accent + lounge corners (floorstyle.js) are added to the template here, after the spots are read. They need
 // the GLB lounge; the placeholder floor keeps one look (style = null).
 function finish(templates, spots, nightMaps, source) {
+  try { if (new URLSearchParams(location.search).get('rows') !== '0') { rowLayout(templates.floor_open); spots = collectSpots(templates.floor_open); } }
+  catch (err) { console.warn('[office] row layout skipped:', err.message); }
   let style = null;
   try {
     if (new URLSearchParams(location.search).get('floorstyle') !== '0') style = buildFloorStyles(templates.floor_open, spots.lounges);   // test switch: ?floorstyle=0
@@ -498,4 +501,46 @@ function bakeWindows() {
 
 function mulberry(a) {
   return () => { a |= 0; a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+}
+
+// Rows: replace the two communal tables with ROWS long single-sided desk rows running along the room's long axis (x),
+// ROW_SEATS seats each, every seat on the far side facing the camera. scene.js gives each department its own row.
+export const ROW_Z = [-4.7, -2.75, -0.8, 1.15, 3.1];         // seat z of each row (back to front)
+export const ROW_X = [-6.0, -4.5, -3.0, -1.5, 0.0, 1.5];
+function rowLayout(open) {
+  const kill = [];
+  let tableMat = null, poufMat = null, lapMat = null, scrMat = null;
+  open.traverse((o) => {
+    if (/^(table_\d|laptops|poufs|mugs|pendants)$/.test(o.name) || /^(desk|screen|lamp)_\d\d$/.test(o.name) || /^laptop_screen_\d\d$/.test(o.name)) kill.push(o);
+    if (o.isMesh && o.name === 'table_1') tableMat = Array.isArray(o.material) ? o.material[0] : o.material;
+    if (o.isMesh && o.name === 'poufs') poufMat = Array.isArray(o.material) ? o.material[0] : o.material;
+    if (o.isMesh && o.name === 'laptops') lapMat = Array.isArray(o.material) ? o.material[0] : o.material;
+    if (o.isMesh && o.name === 'laptop_screen_01') scrMat = o.material;
+  });
+  if (open.getObjectByName('rows')) return;
+  for (const o of kill) o.removeFromParent();
+  const oak = tableMat || stdMat(0xC9A27A, 0.6), black = stdMat(0x1E1E20, 0.5, 0.3), fab = poufMat || stdMat(0xD9D4CC, 0.9);
+  const lap = lapMat || stdMat(0xB8BBC0, 0.35, 0.6);
+  const g = new THREE.Group(); g.name = 'rows'; open.add(g);
+  const len = ROW_X[ROW_X.length - 1] - ROW_X[0] + 1.4, cx = (ROW_X[0] + ROW_X[ROW_X.length - 1]) / 2;
+  ROW_Z.forEach((sz, r) => {
+    const tz = sz + 0.72;
+    addBox(g, oak, len, 0.05, 0.78, cx, 0.725, tz);
+    for (const lx of [-len / 2 + 0.15, len / 2 - 0.15]) for (const s of [-1, 1]) addBox(g, black, 0.05, 0.7, 0.05, cx + lx, 0.35, tz + s * 0.33);
+    ROW_X.forEach((x, i) => {
+      const n = r * ROW_SEATS + i + 1, id = String(n).padStart(2, '0');
+      addCyl(g, fab, 0.24, 0.27, SEAT_Y, x, SEAT_Y / 2, sz);
+      empty(g, `desk_${id}`, x, SEAT_Y, sz, 0);
+      const l = new THREE.Group(); l.position.set(x, 0.75, tz - 0.05); l.rotation.y = Math.PI;
+      addBox(l, lap, 0.32, 0.012, 0.22, 0, 0.006, 0);
+      const lid = new THREE.Group(); lid.position.set(0, 0.012, -0.11); lid.rotation.x = -0.3;
+      addBox(lid, lap, 0.32, 0.21, 0.008, 0, 0.105, 0);
+      const scr = new THREE.Mesh(new THREE.PlaneGeometry(0.29, 0.18), scrMat ? scrMat.clone() : new THREE.MeshStandardMaterial({ name: 'night_screen', color: 0x14171B, emissive: 0x9FD0FF, emissiveIntensity: 0 }));
+      scr.name = `laptop_screen_${id}`; scr.position.set(0, 0.105, 0.0045);
+      lid.add(scr); l.add(lid); g.add(l);
+      g.updateMatrixWorld(true);
+      const e = empty(g, `screen_${id}`, 0, 0, 0); scr.getWorldPosition(e.position); g.worldToLocal(e.position);
+    });
+    empty(g, `lamp_${String(r + 1).padStart(2, '0')}`, cx, 2.45, tz);
+  });
 }
