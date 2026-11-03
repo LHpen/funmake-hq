@@ -244,6 +244,14 @@ function relAgo(ms) {
   if (hr < 24) return hr + ' 小时前';
   return Math.floor(hr / 24) + ' 天前';
 }
+// Absolute report time in Asia/Shanghai: "20:37" today, "11/2 20:37" otherwise
+const SH_FMT = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Shanghai', year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+function shParts(ms) { const o = {}; for (const p of SH_FMT.formatToParts(new Date(ms))) o[p.type] = p.value; return o; }
+function reportTime(ms) {
+  const a = shParts(ms), n = shParts(nowMs());
+  const t = a.hour + ':' + a.minute;
+  return a.year === n.year && a.month === n.month && a.day === n.day ? t : a.month + '/' + a.day + ' ' + t;
+}
 // "now", "12m", "3h", "2d": how long a bot has been silent, small enough for every row
 function relShort(ms) {
   const min = Math.floor((nowMs() - ms) / 60000);
@@ -1372,7 +1380,7 @@ function renderTeam(state, floor, o) {
     setText(c.step, unrep || (quiet ? statusLabel(s) : bot.step || statusLabel(s)));
     setAttr(c.step, 'data-u', unrep ? '' : null);
     const seenAt = parseTs(bot.last_seen);
-    setText(c.seen, seenAt == null ? '–' : relShort(seenAt));
+    setText(c.seen, seenAt == null ? '–' : reportTime(seenAt));
     setAttr(c.seen, 'title', seenAt == null ? '还没有状态' : '最近状态 ' + relAgo(seenAt) + ' (' + hhmm(seenAt) + ')');
     setAttr(c.btn, 'data-s', s);
     setAttr(c.btn, 'aria-label', (bot.name || id) + ', ' + statusLabel(s) + ', ' + seenText(bot));
