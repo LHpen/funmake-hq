@@ -703,5 +703,35 @@ function frame(t) {
     focusV.set(0, (building ? building.cabinY.x : 0) + 0.7, 0).project(camera);
     post.render(clamp(focusV.y * 0.5 + 0.5, 0, 1), dt, clamp(1.5 / camera.zoom, 0.25, 1));
   } else renderer.render(scene, camera);
-  if (!WALLPAPER || WALLPAPER_TAGS) labels.render(scene, camera);
+  if (!WALLPAPER || WALLPAPER_TAGS) { labels.render(scene, camera); unstackTags(); }
+}
+
+// Bubbles of neighbouring desks can land on each other: lift the farther one (higher on screen) until it clears.
+let unstackAt = 0;
+function unstackTags() {
+  const now = performance.now();
+  if (now - unstackAt < 250) return;
+  unstackAt = now;
+  const pills = [];
+  for (const a of actors.values()) {
+    const pill = a.tagEl?.firstElementChild;
+    if (!pill) continue;
+    if (!a.tag.visible || a.tagEl.dataset.mode === 'off') { pill.style.translate = ''; continue; }
+    const lift = parseFloat(pill.dataset.lift || '0');
+    const r = pill.getBoundingClientRect();
+    if (r.width) pills.push({ pill, x: r.left, w: r.width, h: r.height, y: r.top + lift });   // y without the old lift
+  }
+  pills.sort((p, q) => q.y - p.y);                       // nearest (lowest on screen) keeps its place
+  const placed = [];
+  for (const p of pills) {
+    let y = p.y;
+    for (let moved = true, n = 0; moved && n < 8; n++) {
+      moved = false;
+      for (const o of placed) if (p.x < o.x + o.w + 4 && o.x < p.x + p.w + 4 && y < o.y + o.h + 3 && o.y < y + p.h + 3) { y = o.y - p.h - 3; moved = true; }
+    }
+    const lift = p.y - y;
+    p.pill.dataset.lift = String(lift);
+    p.pill.style.translate = lift ? `0 ${-lift}px` : '';
+    placed.push({ ...p, y });
+  }
 }
