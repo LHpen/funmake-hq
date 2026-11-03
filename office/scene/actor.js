@@ -8,7 +8,7 @@ import { Spring, REDUCED, clamp, smoothstep } from './spring.js';
 export const STATUS_COLOR = {
   working: '#34C759', idle: '#A1A1A6', waiting_user: '#FF9F0A', error: '#FF3B30', stuck: '#FF9500', done: '#0A84FF',
 };
-const STATUS_LABEL = { waiting_user: 'Waiting for you', error: 'Error', stuck: 'Stuck?', done: 'Done', working: 'Working', idle: 'Resting' };
+const STATUS_LABEL = { waiting_user: '等你处理', error: '出错', stuck: '卡住了？', done: '完成', working: '工作中', idle: '休息中' };
 const CAMERA_YAW = Math.PI / 4;     // isometric camera sits on +X +Z
 const RESTING_TURN = 0.42;          // blobs lean toward the camera a bit
 const MODEL_HEIGHT = 1.0;
@@ -25,6 +25,25 @@ const rippleTexture = makeRadialTexture([[0, 'rgba(255,255,255,0)'], [0.6, 'rgba
   [0.9, 'rgba(255,255,255,0.3)'], [1, 'rgba(255,255,255,0)']]);
 const RIPPLE_GEO = new THREE.PlaneGeometry(2, 2);
 const CELEBRATE_S = 0.95;
+const KEY_GEO = new THREE.BoxGeometry(0.075, 0.075, 0.02);
+const CUP_GEO = new THREE.CylinderGeometry(0.05, 0.04, 0.1, 14);
+const TEA_GEO = new THREE.CircleGeometry(0.045, 14).rotateX(-Math.PI / 2);
+const HANDLE_GEO = new THREE.TorusGeometry(0.03, 0.009, 6, 12);
+const CUP_MAT = new THREE.MeshStandardMaterial({ color: 0xf6f1e7, roughness: 0.35 });
+const TEA_MAT = new THREE.MeshStandardMaterial({ color: 0x8a5a24, roughness: 0.2 });
+const DOTS = [];
+function dotsTexture(n = 3) {                 // a white speech bubble with 1..3 dots, cached
+  n = Math.max(1, n || 3);
+  if (DOTS[n]) return DOTS[n];
+  const c = document.createElement('canvas'); c.width = 128; c.height = 72;
+  const g = c.getContext('2d');
+  g.fillStyle = 'rgba(255,255,255,0.96)'; g.strokeStyle = 'rgba(0,0,0,0.12)'; g.lineWidth = 3;
+  g.beginPath(); g.roundRect(6, 6, 116, 46, 23); g.moveTo(30, 50); g.lineTo(24, 68); g.lineTo(46, 50); g.fill(); g.stroke();
+  g.fillStyle = '#6e6e73';
+  for (let i = 0; i < n; i++) { g.beginPath(); g.arc(40 + i * 24, 29, 7, 0, Math.PI * 2); g.fill(); }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+  return (DOTS[n] = t);
+}
 
 export class Actor {
   // ctx: { parent: Object3D (the open-floor instance root), inst, pickables: Set, confetti(fn), cursor: {active,x,z}, dropDelay }
@@ -182,7 +201,7 @@ export class Actor {
     this.tagEl.title = '';
   }
 
-  spotIsLounge() { return !!this.spot && this.spot.lounge; }
+  spotIsLounge() { return !!this.spot && (this.spot.lounge || this.spot.chat); }
 
   setHovered(on) {
     if (this.hovered === on) return;
@@ -261,6 +280,70 @@ export class Actor {
     f.halo.material.opacity = 0.6 * Math.sin(Math.PI * fk);
   }
 
+  // ---------- status props: keystrokes (type), tea cup + steam (tea), "..." bubble (chat) ----------
+  ensureProps() {
+    if (this.props) return;
+    const P = this.props = { type: new THREE.Group(), tea: new THREE.Group(), chat: null, keys: [], steam: [] };
+    for (let i = 0; i < 4; i++) {
+      const k = new THREE.Mesh(KEY_GEO, new THREE.MeshBasicMaterial({ color: 0x5ac8fa, transparent: true, depthWrite: false }));
+      k.userData.t = i * 0.12; P.type.add(k); P.keys.push(k);
+    }
+    const cup = new THREE.Group();
+    const body = new THREE.Mesh(CUP_GEO, CUP_MAT); body.position.y = 0.05;
+    const tea = new THREE.Mesh(TEA_GEO, TEA_MAT); tea.position.y = 0.098;
+    const handle = new THREE.Mesh(HANDLE_GEO, CUP_MAT); handle.position.set(0.06, 0.05, 0); handle.rotation.y = Math.PI / 2;
+    cup.add(body, tea, handle);
+    cup.scale.setScalar(1.7); P.cup = cup; P.tea.add(cup);
+    for (let i = 0; i < 2; i++) {
+      const sm = new THREE.Sprite(new THREE.SpriteMaterial({ map: haloTexture, color: 0xffffff, transparent: true, depthWrite: false, opacity: 0 }));
+      sm.scale.setScalar(0.09); sm.userData.t = i * 0.8; cup.add(sm); P.steam.push(sm);
+    }
+    const dots = new THREE.Sprite(new THREE.SpriteMaterial({ map: dotsTexture(), transparent: true, depthWrite: false }));
+    dots.scale.set(0.7, 0.4, 1); dots.position.set(0.5, MODEL_HEIGHT + 0.45, 0); dots.renderOrder = 3;
+    P.chat = dots;
+    P.type.visible = P.tea.visible = dots.visible = false;
+    this.pivot.add(P.type, P.tea, dots);
+    this.sip = 0;
+  }
+
+  tickProps(mode, dt, t) {
+    if (!mode && !this.props) { this.sip = 0; return; }
+    this.ensureProps();
+    const P = this.props;
+    P.type.visible = mode === 'type'; P.tea.visible = mode === 'tea'; P.chat.visible = mode === 'chat';
+    this.sip = 0;
+    if (mode === 'type') {
+      for (const k of P.keys) {
+        k.userData.t += dt * 2.2;
+        const q = k.userData.t % 1;
+        if (q < dt * 2.2) { k.position.set((Math.random() - 0.5) * 0.6, 0.3, 0.5 + Math.random() * 0.15); }
+        k.position.y = 0.3 + q * 0.45;
+        k.material.opacity = 0.9 * (1 - q);
+        k.scale.setScalar(1 - 0.5 * q);
+      }
+    } else if (mode === 'tea') {
+      const c = (t * 0.22 + this.phase) % 1;                    // one sip every ~4.5 s
+      const up = c < 0.12 ? c / 0.12 : c < 0.32 ? 1 : c < 0.44 ? 1 - (c - 0.32) / 0.12 : 0;
+      this.sip = up * up * (3 - 2 * up);
+      P.cup.position.set(0.46 - 0.26 * this.sip, 0.3 + 0.22 * this.sip, 0.36 + 0.14 * this.sip);
+      P.cup.rotation.z = 0.7 * this.sip;
+      for (const sm of P.steam) {
+        sm.userData.t += dt * 0.6;
+        const q = sm.userData.t % 1;
+        sm.position.set(0.02 * Math.sin(q * 9 + sm.userData.t), 0.13 + q * 0.28, 0);
+        sm.material.opacity = (1 - this.sip) * 0.55 * Math.sin(q * Math.PI);
+        sm.scale.setScalar(0.06 + 0.1 * q);
+      }
+    } else if (mode === 'chat') {
+      const talking = Math.sin(t * 0.9 + this.phase * 3) > -0.1;   // takes turns
+      P.chat.material.opacity = talking ? 1 : 0.35;
+      P.chat.position.y = MODEL_HEIGHT + 0.45 + 0.025 * Math.sin(t * 6);
+      P.chat.material.rotation = 0;
+      const n = Math.floor(t * 3 + this.phase) % 4;              // animate the dots 1..3
+      if (n !== P.dotN) { P.dotN = n; P.chat.material.map.offset.x = 0; P.chat.material.map.repeat.x = 1; P.chat.material.map = dotsTexture(n); }
+    }
+  }
+
   tick(dt, t) {
     const p = this.pivot;
     const s = this.status;
@@ -270,12 +353,23 @@ export class Actor {
       const breathe = Math.sin(t * 2.1 + this.phase);
       sy = 1 + 0.018 * breathe; sx = 1 - 0.012 * breathe;
       if (s === 'working') { y = 0.012 * Math.abs(Math.sin(t * 9 + this.phase)); rx = 0.06; }
+      const mode = this.spot?.chat ? 'chat' : this.spot?.lounge ? 'tea' : s === 'working' ? 'type' : null;
+      this.tickProps(mode, dt, t);
+      if (mode === 'type' && !this.anim) {                     // hammering the keyboard
+        y = 0.035 * Math.abs(Math.sin(t * 21 + this.phase)); rx = 0.13 + 0.03 * Math.sin(t * 17);
+        rz = 0.035 * Math.sin(t * 29 + this.phase); sy *= 1 - 0.03 * Math.abs(Math.sin(t * 21 + this.phase));
+      } else if (mode === 'tea') rx = -0.14 * this.sip;
+      else if (mode === 'chat' && !this.anim) {
+        this.nextAction -= dt;
+        if (this.nextAction <= 0) { this.hop(0.16 + Math.random() * 0.1); this.nextAction = 1.6 + Math.random() * 1.8; }
+        rz = 0.05 * Math.sin(t * 2.4 + this.phase);
+      }
       if (s === 'stuck') rz = 0.09 * Math.sin(t * 1.3 + this.phase);
       if (s === 'error') {
         const k = (t + this.phase) % 1.6;
-        if (k < 0.45) ox = 0.03 * Math.sin(k * 70);
+        if (k < 0.45) { ox = 0.06 * Math.sin(k * 70); rz = 0.08 * Math.sin(k * 55); }
       }
-      if (s === 'waiting_user' && !this.anim) {
+      if (s === 'waiting_user' && !this.anim && !this.spot?.chat) {
         this.nextAction -= dt;
         if (this.nextAction <= 0) { this.hop(0.32); this.nextAction = 1.7 + Math.random() * 0.6; }
       }

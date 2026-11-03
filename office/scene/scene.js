@@ -222,12 +222,38 @@ function settle(seconds = 3) {
   }
 }
 
-// Idle bots go to the lounge while seats last; the rest nap at their desks.
+// Spots by status: working -> desk (typing); idle/done -> lounge seats (tea); everyone else that is not
+// working (waiting_user, stuck, unknown, lounge overflow) -> a chat circle next to the lounge. error stays at the desk.
+const CHAT_RING = 6;
+let chatCache = null;
+function chatSpots() {
+  if (chatCache) return chatCache;
+  const seats = assets.spots.lounges.filter(Boolean), desks = assets.spots.desks.filter(Boolean);
+  const avg = (arr) => arr.reduce((v, s) => v.add(s.pos), new THREE.Vector3()).multiplyScalar(1 / Math.max(1, arr.length));
+  const lc = avg(seats), dc = avg(desks);
+  const dir = new THREE.Vector3(dc.x - lc.x, 0, dc.z - lc.z).normalize();
+  const y = 0;                                       // standing on the floor
+  const out = [];
+  for (let ring = 0; ring < 3; ring++) {                       // up to 3 circles of 6
+    const c = new THREE.Vector3(lc.x + dir.x * (2.6 + ring * 1.6), y, lc.z + dir.z * (2.6 + ring * 1.6));
+    for (let i = 0; i < CHAT_RING; i++) {
+      const a = (i / CHAT_RING) * Math.PI * 2 + ring * 0.5;
+      const pos = new THREE.Vector3(c.x + Math.sin(a) * 0.78, y, c.z + Math.cos(a) * 0.78);
+      out.push({ pos, yaw: Math.atan2(c.x - pos.x, c.z - pos.z) - 0.42, chat: true, slot: i });
+    }
+  }
+  return (chatCache = out);
+}
 function assignLounge(bots) {
   const map = new Map();
   const seats = assets.spots.lounges.filter(Boolean);
-  const idle = bots.filter((b) => (b.effective_status || b.status) === 'idle').sort((a, b) => (a.desk || 0) - (b.desk || 0));
-  idle.slice(0, seats.length).forEach((b, i) => map.set(b.id, seats[i]));
+  const st = (b) => b.effective_status || b.status;
+  const byDesk = (a, b) => (a.desk || 0) - (b.desk || 0);
+  const rest = bots.filter((b) => st(b) === 'idle' || st(b) === 'done').sort(byDesk);
+  rest.slice(0, seats.length).forEach((b, i) => map.set(b.id, seats[i]));
+  const talkers = rest.slice(seats.length).concat(bots.filter((b) => !['idle', 'done', 'working', 'error'].includes(st(b))).sort(byDesk));
+  const chats = chatSpots();
+  talkers.slice(0, chats.length).forEach((b, i) => map.set(b.id, chats[i]));
   return map;
 }
 
